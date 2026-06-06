@@ -1,0 +1,6 @@
+node_modules/
+package-lock.json
+*.bat
+start.js
+restart.js
+patch.txt
