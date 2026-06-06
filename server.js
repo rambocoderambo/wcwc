@@ -366,10 +366,14 @@ app.get('/api/status', async (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`WC 2026 Live Score Server running on http://localhost:${PORT}`);
-  console.log(`Endpoints:`);
-  console.log(`  GET /api/matches   - all matches with live scores`);
-  console.log(`  GET /api/simulate  - simulated matches`);
-  console.log(`  GET /api/status    - server status`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`WC 2026 Live Score Server running on http://localhost:${PORT}`);
+    console.log(`Endpoints:`);
+    console.log(`  GET /api/matches   - all matches with live scores`);
+    console.log(`  GET /api/simulate  - simulated matches`);
+    console.log(`  GET /api/status    - server status`);
+  });
+}
+
+module.exports = app;

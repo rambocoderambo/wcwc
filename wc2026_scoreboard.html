@@ -796,7 +796,7 @@ setTimeout(updateCountdowns, 100);
 // ---------- AUTO-REFRESH ----------
 let autoRefresh = false;
 let autoInterval = null;
-const BACKEND_URL = 'http://localhost:3001'; // Change to your-hosted-backend-url when deploying
+const BACKEND_URL = ''; // Empty = same origin (works on Vercel). Set to 'http://localhost:3001' for local dev.
 
 function toggleAutoRefresh() {
   autoRefresh = !autoRefresh;
