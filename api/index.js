@@ -1,5 +1,20 @@
 const path = require('path');
 const express = require('express');
+const fs = require('fs');
 const app = require('../server');
-app.use(express.static(path.join(__dirname, '..')));
+
+const root = path.join(__dirname, '..');
+app.use(express.static(root));
+
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return;
+  const html = path.join(root, 'wc2026_scoreboard.html');
+  if (fs.existsSync(html)) {
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.sendFile(html);
+  } else {
+    res.status(404).send('Not found');
+  }
+});
+
 module.exports = app;
