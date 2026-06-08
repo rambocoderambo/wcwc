@@ -8,7 +8,7 @@ app.use(express.static(root));
 
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return;
-  const html = path.join(root, 'wc2026_scoreboard.html');
+  const html = path.join(root, 'index.html');
   if (fs.existsSync(html)) {
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(html);
