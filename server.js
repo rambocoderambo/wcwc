@@ -324,95 +324,52 @@ function handicapToFraction(h) {
 }
 
 async function scrapeClassicAsianBookie() {
-  const { launch } = await import('cloakbrowser');
-  let browser;
-  try {
-    browser = await launch({ headless: true, humanize: true });
-    const page = await browser.newPage();
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.setDefaultNavigationTimeout(60000);
+  const cloudscraper = require('cloudscraper');
 
-    // Switch to classic mode
-    await page.goto('https://beta.asianbookie.com/en/world-cup', { waitUntil: 'networkidle0' });
-    await new Promise(r => setTimeout(r, 3000));
-    await page.evaluate(() => {
-      const btns = document.querySelectorAll('button');
-      for (const btn of btns) {
-        if (btn.textContent.includes('Switch to Classic')) { btn.click(); return; }
-      }
-    });
-    await new Promise(r => setTimeout(r, 5000));
-
-    // Load classic World Cup page
-    await page.goto('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', { waitUntil: 'networkidle0' });
-    await new Promise(r => setTimeout(r, 5000));
-
-    const text = await page.evaluate(() => document.body.innerText);
-    const lines = text.split('\n').map(l => l.trim());
-
-    const results = [];
-    for (let i = 0; i < lines.length - 3; i++) {
-      // Match line pattern: "Team1 vs Team2	odds" (with tab)
-      if (!lines[i].includes(' vs ') || !lines[i].includes('\t')) continue;
-      const ahLine = lines[i + 1] || '';
-      // Validate AH line: should contain ":" and fractions
-      if (!ahLine.includes(':') || !/[\d\/]/.test(ahLine)) continue;
-
-      const parts = lines[i].split('\t');
-      const teamsStr = parts[0].trim();
-      const [homeRaw, awayRaw] = teamsStr.split(' vs ').map(s => s.trim());
-      if (!homeRaw || !awayRaw) continue;
-
-      const home = normalizeName(homeRaw);
-      const away = normalizeName(awayRaw);
-      if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
-      if (results.some(r => r.home === home && r.away === away)) continue;
-
-      results.push({ home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
-    }
-    return results;
-  } finally {
-    if (browser) await browser.close();
-  }
-}
-
-// Fallback: beta API (works on Vercel without CloakBrowser)
-async function fetchBetaApiOdds() {
-  const url = 'https://beta.asianbookie.com/api/poll/world-cup/summary?locale=en';
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://beta.asianbookie.com/en/world-cup', 'Accept': 'application/json' }
+  await cloudscraper.get({
+    uri: 'https://beta.asianbookie.com/en/world-cup',
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    simple: false
   });
-  if (!res.ok) throw new Error('Beta API HTTP ' + res.status);
-  const body = await res.json();
-  if (!body.success) throw new Error('Beta API error');
-  return (body.data.matchCards || []).map(mc => {
-    const home = normalizeName(mc.HOME_TEAM_NAME || '');
-    const away = normalizeName(mc.AWAY_TEAM_NAME || '');
-    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
-    const ah = mc.AH;
-    if (!ah || !ah.odds) return null;
-    const hVal = parseFloat(ah.odds);
-    const displayVal = handicapToFraction(Math.abs(hVal));
-    let ahLine;
-    if (hVal < 0) ahLine = '0 : ' + displayVal;
-    else if (hVal > 0) ahLine = displayVal + ' : 0';
-    else ahLine = '0 : 0';
-    return { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie (beta)' };
-  }).filter(Boolean);
+
+  const html = await cloudscraper.get({
+    uri: 'https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Cookie': 'CLASSIC=1'
+    }
+  });
+
+  const $ = cheerio.load(html);
+  $('script, style, link, meta, noscript, iframe').remove();
+  const text = $('body').text();
+  const lines = text.split('\n').map(l => l.trim());
+
+  const results = new Map();
+  for (let i = 0; i < lines.length - 9; i++) {
+    if (lines[i] !== 'vs') continue;
+    const team1 = lines[i - 1] || '';
+    const team2 = lines[i + 2] || '';
+    if (!team1 || !team2 || /^[\d.]+$/.test(team1) || /^[\d.]+$/.test(team2)) continue;
+    const ahLine = lines[i + 9] || '';
+    if (!ahLine.includes(':') || !/[\d\/]/.test(ahLine)) continue;
+
+    const home = normalizeName(team1);
+    const away = normalizeName(team2);
+    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
+    const key = home + '|' + away;
+    if (results.has(key)) continue;
+
+    results.set(key, { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
+  }
+  return Array.from(results.values());
 }
 
 async function getOdds() {
   const cached = AH_CACHE.data && (Date.now() - AH_CACHE.ts < AH_CACHE.ttl);
   if (cached) return AH_CACHE.data;
 
-  let data = [];
-  try { data = await scrapeClassicAsianBookie(); }
-  catch (e) {
-    console.log('Classic scrape failed, trying beta API:', e.message);
-    try { data = await fetchBetaApiOdds(); }
-    catch (e2) { console.log('Beta API also failed:', e2.message); }
-  }
-
+  const data = await scrapeClassicAsianBookie();
   AH_CACHE.data = data;
   AH_CACHE.ts = Date.now();
   return data;
