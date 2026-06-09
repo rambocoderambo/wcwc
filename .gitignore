@@ -5,3 +5,5 @@ start.js
 restart.js
 patch.txt
 nul
+.env
+.cloakbrowser/

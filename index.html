@@ -85,6 +85,9 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 .ab.off{background:#1e293b!important;color:#475569!important;border-color:#1e293b!important}
 .flash{animation:fF .8s ease-out}
 @keyframes fF{0%{background:rgba(34,197,94,.3)}100%{background:transparent}}
+.ah{font-size:.55rem;color:#a78bfa;text-align:center;grid-column:1/-1;padding:1px 0 0;min-height:16px;letter-spacing:.3px}
+.ah .ld{color:#475569}
+.ah .lv{color:#a78bfa;font-weight:600}
 </style>
 </head>
 <body>
@@ -94,6 +97,7 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 <div class="bar">
 <button class="b1" onclick="resetAll()">🗑️ Reset</button>
 <button class="b3 ab off" id="autoBtn" onclick="toggleAutoRefresh()">▶ Auto</button>
+<button class="b3" id="oddsBtn" onclick="fetchOdds()">🔄 Odds</button>
 <span class="sd r" id="statusDot" title="Offline — server not connected"></span>
 <input id="search" placeholder="🔍 Search team..." oninput="filterGroups(this.value)">
 </div>
@@ -187,6 +191,62 @@ function initScores() {
   scores['3RD']=['','']; scores['3RD_et']=['','']; scores['3RD_pen']=['',''];
 }
 initScores();
+
+// ---------- ASIAN HANDICAP ODDS ----------
+let oddsMap = {};
+let oddsLoading = false;
+
+async function fetchOdds() {
+  const btn = document.getElementById('oddsBtn');
+  if (oddsLoading) return;
+  oddsLoading = true;
+  btn.innerHTML = '⏳ Odds';
+  btn.style.opacity = '0.5';
+  try {
+    const res = await fetch(BACKEND_URL + '/api/odds');
+    const data = await res.json();
+    if (data.odds && data.odds.length) {
+      oddsMap = {};
+      for (const o of data.odds) {
+        const label = o.ah_line;
+        const src = o.source || o.bookmaker || '';
+        oddsMap[o.home + '|' + o.away] = { line: label, src: src };
+        oddsMap[o.away + '|' + o.home] = { line: label, src: src };
+      }
+      applyOdds();
+    }
+    btn.innerHTML = '🔄 Odds';
+    btn.title = `Loaded ${data.count || 0} matches`;
+    btn.style.opacity = '1';
+  } catch (e) {
+    btn.innerHTML = '⚠️ Odds';
+    btn.title = 'Failed: ' + e.message;
+    btn.style.opacity = '1';
+    setTimeout(() => { btn.innerHTML = '🔄 Odds'; }, 3000);
+  }
+  oddsLoading = false;
+}
+
+function applyOdds() {
+  document.querySelectorAll('.ah').forEach(el => {
+    const home = el.dataset.home;
+    const away = el.dataset.away;
+    const key = home + '|' + away;
+    const entry = oddsMap[key];
+    if (entry) {
+      el.innerHTML = '<span class="lv">AH ' + entry.line + '</span>';
+    } else {
+      el.innerHTML = '<span class="ld">--</span>';
+    }
+  });
+}
+
+// Override render to also apply odds after rendering
+const _origRender = render;
+render = function() {
+  _origRender();
+  applyOdds();
+};
 
 // ---------- GROUP STANDINGS ----------
 function calcGroup(g) {
@@ -562,7 +622,8 @@ html += `<input class="mi" value="${sc[0]}" placeholder="-" maxlength="2" oninpu
 html += `<span class="mv">vs</span>`;
 html += `<input class="mi" value="${sc[1]}" placeholder="-" maxlength="2" oninput="onGroupScore('${k}',1,this.value)">`;
 html += `<div class="mt">${flags[away]||''} ${away}</div><div class="dt">📆 ${MATCH_TIMES[gi][m]}</div>`;
-html += `<div class="cd" data-ts="${getMatchTs(gi,m)}" data-key="${k}">⏳ --</div></div>`;
+html += `<div class="cd" data-ts="${getMatchTs(gi,m)}" data-key="${k}">⏳ --</div>`;
+html += `<div class="ah" data-home="${home}" data-away="${away}">--</div></div>`;
     }
     html += `</div>`;
     
@@ -836,7 +897,8 @@ const NAME_ALIASES = {
   'saudi arabia': 'Saudi Arabia',
   'new zealand': 'New Zealand',
   'curacao': 'Curaçao', 'curaçao': 'Curaçao',
-  'mexico': 'Mexico', 'canada': 'Canada', 'brazil': 'Brazil',
+   'south africa': 'South Africa',
+   'mexico': 'Mexico', 'canada': 'Canada', 'brazil': 'Brazil',
   'morocco': 'Morocco', 'haiti': 'Haiti', 'scotland': 'Scotland',
   'paraguay': 'Paraguay', 'australia': 'Australia',
   'germany': 'Germany', 'ecuador': 'Ecuador',

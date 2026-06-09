@@ -24,15 +24,16 @@ const NAME_ALIASES = {
   'south korea': 'South Korea', 'korea republic': 'South Korea', 'korea': 'South Korea',
   'czech republic': 'Czech Republic', 'czechia': 'Czech Republic',
   'ivory coast': 'Ivory Coast', "côte d'ivoire": 'Ivory Coast', 'cote d\'ivoire': 'Ivory Coast',
-  'dr congo': 'DR Congo', 'congo dr': 'DR Congo', 'drc': 'DR Congo', 'congo drc': 'DR Congo',
+   'dr congo': 'DR Congo', 'congo dr': 'DR Congo', 'drc': 'DR Congo', 'congo drc': 'DR Congo', 'd.r. congo': 'DR Congo', 'democratic rep congo': 'DR Congo',
   'netherlands': 'Netherlands', 'holland': 'Netherlands',
   'turkey': 'Turkey', 'türkiye': 'Turkey', 'turkiye': 'Turkey',
   'cape verde': 'Cape Verde', 'cabo verde': 'Cape Verde',
-  'bosnia and herzegovina': 'Bosnia and Herzegovina', 'bosnia': 'Bosnia and Herzegovina',
+   'bosnia and herzegovina': 'Bosnia and Herzegovina', 'bosnia': 'Bosnia and Herzegovina', 'bosnia & herzegovina': 'Bosnia and Herzegovina', 'bosnia herzegovina': 'Bosnia and Herzegovina',
   'saudi arabia': 'Saudi Arabia', 'saudi': 'Saudi Arabia',
   'new zealand': 'New Zealand',
   'curacao': 'Curaçao', 'curaçao': 'Curaçao',
-  'mexico': 'Mexico', 'canada': 'Canada', 'brazil': 'Brazil',
+   'south africa': 'South Africa',
+   'mexico': 'Mexico', 'canada': 'Canada', 'brazil': 'Brazil',
   'morocco': 'Morocco', 'haiti': 'Haiti', 'scotland': 'Scotland',
   'paraguay': 'Paraguay', 'australia': 'Australia',
   'germany': 'Germany', 'ecuador': 'Ecuador',
@@ -303,6 +304,120 @@ function getSimulatedMatches() {
   return matches;
 }
 
+// ---------- ASIAN HANDICAP ODDS ----------
+const AH_CACHE = { ttl: 120 * 1000, data: null, ts: 0 };
+
+function handicapToFraction(h) {
+  if (h === 0) return '0';
+  const whole = Math.floor(h);
+  const frac = Math.round((h - whole) * 100);
+  if (frac === 0) return String(whole);
+  if (whole === 0) {
+    if (frac === 25) return '1/4';
+    if (frac === 50) return '1/2';
+    if (frac === 75) return '3/4';
+  }
+  if (frac === 25) return `${whole} 1/4`;
+  if (frac === 50) return `${whole} 1/2`;
+  if (frac === 75) return `${whole} 3/4`;
+  return String(h);
+}
+
+async function scrapeClassicAsianBookie() {
+  const { launch } = await import('cloakbrowser');
+  let browser;
+  try {
+    browser = await launch({ headless: true, humanize: true });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.setDefaultNavigationTimeout(60000);
+
+    // Switch to classic mode
+    await page.goto('https://beta.asianbookie.com/en/world-cup', { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 3000));
+    await page.evaluate(() => {
+      const btns = document.querySelectorAll('button');
+      for (const btn of btns) {
+        if (btn.textContent.includes('Switch to Classic')) { btn.click(); return; }
+      }
+    });
+    await new Promise(r => setTimeout(r, 5000));
+
+    // Load classic World Cup page
+    await page.goto('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 5000));
+
+    const text = await page.evaluate(() => document.body.innerText);
+    const lines = text.split('\n').map(l => l.trim());
+
+    const results = [];
+    for (let i = 0; i < lines.length - 3; i++) {
+      // Match line pattern: "Team1 vs Team2	odds" (with tab)
+      if (!lines[i].includes(' vs ') || !lines[i].includes('\t')) continue;
+      const ahLine = lines[i + 1] || '';
+      // Validate AH line: should contain ":" and fractions
+      if (!ahLine.includes(':') || !/[\d\/]/.test(ahLine)) continue;
+
+      const parts = lines[i].split('\t');
+      const teamsStr = parts[0].trim();
+      const [homeRaw, awayRaw] = teamsStr.split(' vs ').map(s => s.trim());
+      if (!homeRaw || !awayRaw) continue;
+
+      const home = normalizeName(homeRaw);
+      const away = normalizeName(awayRaw);
+      if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
+      if (results.some(r => r.home === home && r.away === away)) continue;
+
+      results.push({ home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
+    }
+    return results;
+  } finally {
+    if (browser) await browser.close();
+  }
+}
+
+// Fallback: beta API (works on Vercel without CloakBrowser)
+async function fetchBetaApiOdds() {
+  const url = 'https://beta.asianbookie.com/api/poll/world-cup/summary?locale=en';
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://beta.asianbookie.com/en/world-cup', 'Accept': 'application/json' }
+  });
+  if (!res.ok) throw new Error('Beta API HTTP ' + res.status);
+  const body = await res.json();
+  if (!body.success) throw new Error('Beta API error');
+  return (body.data.matchCards || []).map(mc => {
+    const home = normalizeName(mc.HOME_TEAM_NAME || '');
+    const away = normalizeName(mc.AWAY_TEAM_NAME || '');
+    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
+    const ah = mc.AH;
+    if (!ah || !ah.odds) return null;
+    const hVal = parseFloat(ah.odds);
+    const displayVal = handicapToFraction(Math.abs(hVal));
+    let ahLine;
+    if (hVal < 0) ahLine = '0 : ' + displayVal;
+    else if (hVal > 0) ahLine = displayVal + ' : 0';
+    else ahLine = '0 : 0';
+    return { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie (beta)' };
+  }).filter(Boolean);
+}
+
+async function getOdds() {
+  const cached = AH_CACHE.data && (Date.now() - AH_CACHE.ts < AH_CACHE.ttl);
+  if (cached) return AH_CACHE.data;
+
+  let data = [];
+  try { data = await scrapeClassicAsianBookie(); }
+  catch (e) {
+    console.log('Classic scrape failed, trying beta API:', e.message);
+    try { data = await fetchBetaApiOdds(); }
+    catch (e2) { console.log('Beta API also failed:', e2.message); }
+  }
+
+  AH_CACHE.data = data;
+  AH_CACHE.ts = Date.now();
+  return data;
+}
+
 // ---------- SOURCE ROUTER ----------
 const SOURCES = [
   { name: '365scores', fn: fetch365scores },
@@ -366,13 +481,34 @@ app.get('/api/status', async (req, res) => {
   });
 });
 
+app.get('/api/odds', async (req, res) => {
+  try {
+    const odds = await getOdds();
+    res.json({ odds, count: odds.length, ts: Date.now() });
+  } catch (e) {
+    res.status(502).json({ error: e.message, odds: [], count: 0, ts: Date.now() });
+  }
+});
+
 if (require.main === module) {
+  // Serve static frontend when running directly
+  app.use(express.static(__dirname));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    const html = require('path').join(__dirname, 'index.html');
+    if (require('fs').existsSync(html)) {
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      res.sendFile(html);
+    } else next();
+  });
+
   app.listen(PORT, () => {
     console.log(`WC 2026 Live Score Server running on http://localhost:${PORT}`);
     console.log(`Endpoints:`);
     console.log(`  GET /api/matches   - all matches with live scores`);
     console.log(`  GET /api/simulate  - simulated matches`);
     console.log(`  GET /api/status    - server status`);
+    console.log(`  GET /api/odds      - Asian Handicap odds`);
   });
 }
 
