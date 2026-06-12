@@ -1007,8 +1007,11 @@ function applyMatches(apiMatches) {
 
     if (!key) continue;
 
+    // Don't overwrite manually entered scores
+    const cur = scores[key];
+    if (cur && cur[0] !== '' && cur[1] !== '' && cur[0] !== 'null' && cur[1] !== 'null') continue;
+
     if (m.homeScore !== null && m.awayScore !== null) {
-      const cur = scores[key];
       const hs = String(m.homeScore), as = String(m.awayScore);
       if (!cur || cur[0] !== hs || cur[1] !== as) {
         if (!scores[key]) scores[key] = ['', ''];

@@ -268,9 +268,13 @@ function parseMatchTime(str) {
   return new Date(2026, month, day, h, m).getTime();
 }
 
+// Cache simulated scores so they don't change on every poll
+const SIM_CACHE = {};
+
 function getSimulatedMatches() {
   const now = Date.now();
   const matches = [];
+  let changed = false;
 
   GROUPS.forEach((g, gi) => {
     for (let m = 0; m < 6; m++) {
@@ -278,28 +282,57 @@ function getSimulatedMatches() {
       const away = g.teams[PAIRINGS[m][1]];
       const matchStart = parseMatchTime(MATCH_TIMES[gi][m]);
       const matchEnd = matchStart + 110 * 60 * 1000;
+      const key = g.name + '_' + m;
 
       let status = 'UPCOMING';
       let homeScore = null, awayScore = null;
 
-      if (now >= matchStart && now < matchEnd) {
-        status = 'LIVE';
-        const elapsed = Math.floor((now - matchStart) / 60000);
-        const simulated = simulateScore(home, away);
-        const scaled = Math.min(elapsed, 105);
-        const progress = scaled / 105;
-        homeScore = Math.round(simulated.home * progress);
-        awayScore = Math.round(simulated.away * progress);
-      } else if (now >= matchEnd) {
-        status = 'FT';
-        const s = simulateScore(home, away);
-        homeScore = s.home;
-        awayScore = s.away;
+      if (!SIM_CACHE[key] || (now >= matchEnd && SIM_CACHE[key].status !== 'FT')) {
+        // Determine final result for matches that have ended
+        if (now >= matchEnd) {
+          status = 'FT';
+          const s = simulateScore(home, away);
+          homeScore = s.home;
+          awayScore = s.away;
+          SIM_CACHE[key] = { homeScore, awayScore, status: 'FT' };
+          changed = true;
+        } else if (now >= matchStart) {
+          status = 'LIVE';
+          const elapsed = Math.floor((now - matchStart) / 60000);
+          const simulated = simulateScore(home, away);
+          const scaled = Math.min(elapsed, 105);
+          const progress = scaled / 105;
+          homeScore = Math.round(simulated.home * progress);
+          awayScore = Math.round(simulated.away * progress);
+          SIM_CACHE[key] = { homeScore, awayScore, status: 'LIVE', ts: now };
+          changed = true;
+        }
+      } else {
+        // Use cached result
+        homeScore = SIM_CACHE[key].homeScore;
+        awayScore = SIM_CACHE[key].awayScore;
+        status = SIM_CACHE[key].status;
+        // Update LIVE progress
+        if (status === 'LIVE' && now >= matchEnd) {
+          status = 'FT';
+          const s = simulateScore(home, away);
+          homeScore = s.home;
+          awayScore = s.away;
+          SIM_CACHE[key] = { homeScore, awayScore, status: 'FT' };
+          changed = true;
+        }
       }
 
       matches.push({home, away, homeScore, awayScore, status, date: new Date(matchStart).toISOString(), source: 'simulation'});
     }
   });
+
+  // Clean old LIVE timestamp keys
+  for (const [k, v] of Object.entries(SIM_CACHE)) {
+    if (v.status === 'LIVE' && now - (v.ts || 0) > 120000) {
+      delete SIM_CACHE[k];
+    }
+  }
 
   return matches;
 }
