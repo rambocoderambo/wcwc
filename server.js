@@ -213,19 +213,30 @@ const TEAM_STRENGTH = {
   'Saudi Arabia': 64, 'Turkey': 63, 'Norway': 62, 'Wales': 61, 'Poland': 60,
 };
 
-function simulateGoal(strength) {
-  const rate = strength / 30;
-  const goals = Math.random() * rate;
-  return Math.floor(Math.random() < (goals - Math.floor(goals)) ? Math.ceil(goals) : Math.floor(goals));
-}
-
 function simulateScore(homeStr, awayStr) {
-  const hStrength = TEAM_STRENGTH[homeStr] || 65;
-  const aStrength = TEAM_STRENGTH[awayStr] || 65;
-  // home advantage
-  const home = simulateGoal(hStrength + 3);
-  const away = simulateGoal(aStrength);
-  return { home, away };
+  const hStr = TEAM_STRENGTH[homeStr] || 65;
+  const aStr = TEAM_STRENGTH[awayStr] || 65;
+
+  // Expected goals based on relative strength + home advantage
+  const hPower = Math.pow(hStr + 5, 2);
+  const aPower = Math.pow(aStr, 2);
+  const homeShare = hPower / (hPower + aPower);
+
+  // Random total goals (2.0-4.5 range, weighted toward lower end)
+  const totalGoals = 1.8 + Math.random() * 2.7;
+
+  const homeExpected = Math.max(0.2, totalGoals * homeShare);
+  const awayExpected = Math.max(0.2, totalGoals * (1 - homeShare));
+
+  // Poisson distribution for realistic football scores
+  function poisson(lambda) {
+    const L = Math.exp(-lambda);
+    let k = 0, p = 1;
+    do { k++; p *= Math.random(); } while (p > L);
+    return Math.min(k - 1, 10);
+  }
+
+  return { home: poisson(homeExpected), away: poisson(awayExpected) };
 }
 
 // Hardcoded group matchups from the HTML
