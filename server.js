@@ -54,6 +54,17 @@ function normalizeName(raw) {
   return NAME_ALIASES[key] || raw.trim();
 }
 
+function isWorldCupMatch(home, away) {
+  return WC_MATCH_KEYS.has(home + '|' + away);
+}
+
+function sanitizeScore(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const n = parseInt(val);
+  if (isNaN(n) || n < 0) return null;
+  return n;
+}
+
 // ---------- 365SCORES API ----------
 async function fetch365scores() {
   const url = 'https://webws.365scores.com/web/games/?langId=1&timezoneName=UTC&userCountryId=21&appType=2&days=0&showOdds=false&showLive=true';
@@ -88,6 +99,9 @@ async function fetch365scores() {
     const away = normalizeName(awayName);
     if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
 
+    // Verify this is actually a World Cup group match by checking against known pairings
+    if (!isWorldCupMatch(home, away)) continue;
+
     const statusId = g.status?.id || g.status || 1;
     let matchStatus = 'UPCOMING';
     if (statusId === 3) matchStatus = 'LIVE';
@@ -98,8 +112,8 @@ async function fetch365scores() {
 
     matches.push({
       home, away,
-      homeScore: homeScore !== null ? parseInt(homeScore) : null,
-      awayScore: awayScore !== null ? parseInt(awayScore) : null,
+      homeScore: sanitizeScore(homeScore),
+      awayScore: sanitizeScore(awayScore),
       status: matchStatus,
       date: g.startTime || g.startDate || null,
       source: '365scores'
@@ -123,19 +137,20 @@ async function fetchOpenLigaDB() {
     const away = normalizeName(m.team2?.teamName || '');
     const results = m.matchResults || [];
     const ftResult = results.find(r => r.resultTypeId === 2);
-    const homeScore = ftResult ? parseInt(ftResult.pointsTeam1) : null;
-    const awayScore = ftResult ? parseInt(ftResult.pointsTeam2) : null;
 
     let status = 'UPCOMING';
     if (m.matchIsFinished) status = 'FT';
     else if (m.matchDateTime && new Date(m.matchDateTime) <= new Date()) status = 'LIVE';
 
     return {
-      home, away, homeScore, awayScore, status,
+      home, away,
+      homeScore: ftResult ? sanitizeScore(parseInt(ftResult.pointsTeam1)) : null,
+      awayScore: ftResult ? sanitizeScore(parseInt(ftResult.pointsTeam2)) : null,
+      status,
       date: m.matchDateTime || null,
       source: 'openligadb'
     };
-  }).filter(m => CANONICAL_TEAMS.has(m.home) && CANONICAL_TEAMS.has(m.away));
+  }).filter(m => CANONICAL_TEAMS.has(m.home) && CANONICAL_TEAMS.has(m.away) && isWorldCupMatch(m.home, m.away));
 }
 
 // ---------- BBC SPORT SCRAPE ----------
@@ -261,6 +276,17 @@ const GROUPS = [
   {name:'L',teams:['England','Croatia','Ghana','Panama']}
 ];
 const PAIRINGS = [[0,1],[2,3],[1,3],[0,2],[3,0],[2,1]];
+
+// Build lookup of all 72 valid World Cup group match pairings
+const WC_MATCH_KEYS = new Set();
+for (const g of GROUPS) {
+  for (const [hIdx, aIdx] of PAIRINGS) {
+    const home = g.teams[hIdx];
+    const away = g.teams[aIdx];
+    WC_MATCH_KEYS.add(home + '|' + away);
+  }
+}
+
 const MATCH_TIMES = [
   ['Jun 12 03:00','Jun 12 10:00','Jun 19 00:00','Jun 19 09:00','Jun 25 09:00','Jun 25 09:00'],
   ['Jun 13 03:00','Jun 14 03:00','Jun 19 03:00','Jun 19 06:00','Jun 25 03:00','Jun 25 03:00'],
