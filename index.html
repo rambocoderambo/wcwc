@@ -20,6 +20,9 @@ body{background:#060a14;color:#e2e8f0;font-family:Inter,sans-serif;padding:14px}
 .b3{background:#1e293b;color:#94a3b8}.b3:hover{background:#334155;color:#fff}
 .bar input{margin-left:auto;padding:6px 10px;background:#0c1220;border:1px solid #1e293b;border-radius:6px;color:#e2e8f0;font-family:inherit;font-size:.75rem;width:160px}
 .bar input:focus{outline:none;border-color:#3b82f6}
+.bar-links{flex-wrap:wrap;gap:4px;margin-bottom:6px;padding:6px 10px;background:#0a0f1c;border-radius:6px;border:1px solid #1e293b}
+.bar-links .bl{font-size:.65rem;font-weight:600;color:#64748b;margin:0 2px;text-transform:uppercase;letter-spacing:.5px}
+.bar-links button{font-size:.7rem;padding:4px 10px}
 .grd{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-bottom:30px}
 .gc{background:#0c1220;border:1px solid #1e293b;border-radius:8px;overflow:hidden}
 .gh{padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#0f1a30;border-bottom:1px solid #1e293b}
@@ -96,18 +99,25 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 <div class="hero"><h1>⚽ WORLD CUP 2026</h1><div class="clock" id="clock">📍 <span class="tm">--:--:--</span></div><div class="sub">USA · Canada · Mexico</div><div class="bdg">🏆 June 11 – July 19</div></div>
 
 <div class="bar">
-<button class="b3" onclick="window.open('https://rtmklik.rtm.gov.my/live/tv/okey','_blank')">📺 TV Okey</button>
-<button class="b3" onclick="window.open('https://rtmklik.rtm.gov.my/live/tv/sukan','_blank')">📺 TV Sukan</button>
-<button class="b3" onclick="window.open('https://www.smvgolive.com/','_blank')">📺 SMV Go Live</button>
-<button class="b3" onclick="window.open('https://upstash-world-cup.vercel.app/','_blank')">📺 Fable 5 Prediction</button>
-<button class="b3" onclick="window.open('https://wcpredictor-drab.vercel.app/','_blank')">⚽ WC Rambo Predictor</button>
-<button class="b3" onclick="window.open('https://www.bk8mys.asia/en-my/','_blank')">🎰 Betting Site</button>
-<button class="b3" onclick="window.open('https://fifa-wc-predictor.sudavivi.workers.dev/#match-1','_blank')">🤖 15 Models Predictor</button>
 <button class="b1" onclick="resetAll()">🗑️ Reset</button>
 <button class="b3 ab off" id="autoBtn" onclick="toggleAutoRefresh()">▶ Auto</button>
 <button class="b3" id="oddsBtn" onclick="fetchOdds()">🔄 Odds</button>
 <span class="sd r" id="statusDot" title="Offline — server not connected"></span>
 <input id="search" placeholder="🔍 Search team..." oninput="filterGroups(this.value)">
+</div>
+
+<div class="bar bar-links">
+<span class="bl">📺 Live</span>
+<button class="b3" onclick="window.open('https://rtmklik.rtm.gov.my/live/tv/okey','_blank')">TV Okey</button>
+<button class="b3" onclick="window.open('https://rtmklik.rtm.gov.my/live/tv/sukan','_blank')">TV Sukan</button>
+<button class="b3" onclick="window.open('https://www.smvgolive.com/','_blank')">SMV Go Live</button>
+<span class="bl">🤖 Predictors</span>
+<button class="b3" onclick="window.open('https://upstash-world-cup.vercel.app/','_blank')">Fable 5</button>
+<button class="b3" onclick="window.open('https://wcpredictor-drab.vercel.app/','_blank')">WC Rambo</button>
+<button class="b3" onclick="window.open('https://fifa-wc-predictor.sudavivi.workers.dev/#match-1','_blank')">15 Models</button>
+<button class="b3" onclick="window.open('https://worldcup.lyihub.com/','_blank')">Lin Yi LYi · Jiahao</button>
+<span class="bl">🎰 Casino</span>
+<button class="b3" onclick="window.open('https://www.bk8mys.asia/en-my/','_blank')">BK8</button>
 </div>
 
 <div id="nextMatches" class="nm">
