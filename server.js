@@ -290,6 +290,29 @@ async function getOdds() {
   return data;
 }
 
+// ---------- WORLD CUP SCHEDULE ----------
+const GROUPS = [
+  {name:'A',teams:['Mexico','South Africa','South Korea','Czech Republic']},
+  {name:'B',teams:['Canada','Bosnia and Herzegovina','Qatar','Switzerland']},
+  {name:'C',teams:['Brazil','Morocco','Haiti','Scotland']},
+  {name:'D',teams:['United States','Paraguay','Australia','Turkey']},
+  {name:'E',teams:['Germany','Curaçao','Ivory Coast','Ecuador']},
+  {name:'F',teams:['Netherlands','Japan','Sweden','Tunisia']},
+  {name:'G',teams:['Belgium','Egypt','Iran','New Zealand']},
+  {name:'H',teams:['Spain','Cape Verde','Saudi Arabia','Uruguay']},
+  {name:'I',teams:['France','Senegal','Iraq','Norway']},
+  {name:'J',teams:['Argentina','Algeria','Austria','Jordan']},
+  {name:'K',teams:['Portugal','DR Congo','Uzbekistan','Colombia']},
+  {name:'L',teams:['England','Croatia','Ghana','Panama']}
+];
+const PAIRINGS = [[0,1],[2,3],[1,3],[0,2],[3,0],[2,1]];
+const WC_MATCH_KEYS = new Set();
+for (const g of GROUPS) {
+  for (const [hIdx, aIdx] of PAIRINGS) {
+    WC_MATCH_KEYS.add(g.teams[hIdx] + '|' + g.teams[aIdx]);
+  }
+}
+
 // ---------- SOURCE ROUTER ----------
 const APIFOOTBALL_KEY = process.env.APIFOOTBALL_KEY || '672aa02fe1cd2b77ec0d5fd6eb5526da3b797e4039b5396405fd27bb6308b012';
 
