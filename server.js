@@ -285,14 +285,9 @@ function parseMatchTime(str) {
   return new Date(2026, month, day, h, m).getTime();
 }
 
-// Cache simulated scores so they don't change on every poll
-const SIM_CACHE = {};
-
 function getSimulatedMatches() {
   const now = Date.now();
   const matches = [];
-  // Clear cache each time so scores regenerate fresh for a new session
-  // (but stay consistent within the same session via caching)
 
   GROUPS.forEach((g, gi) => {
     for (let m = 0; m < 6; m++) {
@@ -305,29 +300,17 @@ function getSimulatedMatches() {
       let status = 'UPCOMING';
       let homeScore = null, awayScore = null;
 
-      if (!SIM_CACHE[key]) {
-        // Always generate a score regardless of time, so auto-refresh works instantly
+      if (now >= matchStart && now < matchEnd) {
+        status = 'LIVE';
+        const s = simulateScore(home, away);
+        const progress = Math.min((now - matchStart) / (110 * 60 * 1000), 1);
+        homeScore = Math.round(s.home * progress);
+        awayScore = Math.round(s.away * progress);
+      } else if (now >= matchEnd) {
+        status = 'FT';
         const s = simulateScore(home, away);
         homeScore = s.home;
         awayScore = s.away;
-
-        if (now >= matchStart && now < matchEnd) {
-          status = 'LIVE';
-        } else if (now >= matchEnd) {
-          status = 'FT';
-        } else {
-          status = 'UPCOMING';
-        }
-        SIM_CACHE[key] = { homeScore, awayScore, status };
-      } else {
-        homeScore = SIM_CACHE[key].homeScore;
-        awayScore = SIM_CACHE[key].awayScore;
-        status = SIM_CACHE[key].status;
-        // Transition LIVE to FT if time passed
-        if (status === 'LIVE' && now >= matchEnd) {
-          status = 'FT';
-          SIM_CACHE[key].status = 'FT';
-        }
       }
 
       matches.push({home, away, homeScore, awayScore, status, date: new Date(matchStart).toISOString(), source: 'simulation'});
@@ -419,45 +402,19 @@ async function getMatches() {
   const cached = getCached('matches');
   if (cached) return cached;
 
-  // Always generate simulation base (all 72 matches with scores)
-  const simMatches = getSimulatedMatches();
-
-  // Try live sources and overlay real scores
-  let liveSource = 'simulation';
-  const liveMap = {};
-
   for (const source of SOURCES) {
     try {
       const matches = await source.fn();
       if (matches && matches.length > 0) {
-        liveSource = source.name;
-        for (const m of matches) {
-          if (m.homeScore !== null && m.awayScore !== null) {
-            const k = m.home + '|' + m.away;
-            liveMap[k] = m;
-          }
-        }
-        break; // Use first successful source
+        setCache('matches', { matches, source: source.name });
+        return { matches, source: source.name };
       }
     } catch (e) {
       console.log(`Source ${source.name} failed: ${e.message}`);
     }
   }
 
-  // Overlay live scores on simulation base
-  for (const m of simMatches) {
-    const k = m.home + '|' + m.away;
-    const live = liveMap[k];
-    if (live) {
-      m.homeScore = live.homeScore;
-      m.awayScore = live.awayScore;
-      m.status = live.status || 'FT';
-      m.source = liveSource;
-    }
-  }
-
-  setCache('matches', { matches: simMatches, source: liveSource });
-  return { matches: simMatches, source: liveSource };
+  return { matches: [], source: 'none' };
 }
 
 function getSimulated() {

@@ -968,12 +968,8 @@ async function pollBackend() {
     const data = await res.json();
 
     if (!data.matches || data.matches.length === 0) {
-      // Try simulation fallback on backend
-      const simRes = await fetch(`${BACKEND_URL}/api/simulate`);
-      const simData = await simRes.json();
-      applyMatches(simData.matches || []);
       dot.className = 'sd y';
-      dot.title = 'Simulated — no live data available';
+      dot.title = 'No live data available — enter scores manually';
       return;
     }
 
