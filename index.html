@@ -969,13 +969,20 @@ async function pollBackend() {
 
     if (!data.matches || data.matches.length === 0) {
       dot.className = 'sd y';
-      dot.title = 'No live data available — enter scores manually';
+      dot.title = 'No data available — enter scores manually';
       return;
     }
 
     applyMatches(data.matches);
-    dot.className = 'sd g';
-    dot.title = `Live — ${data.source} | ${data.matches.filter(m => m.status === 'LIVE').length} live matches`;
+
+    const liveCount = data.matches.filter(m => m.status === 'LIVE').length;
+    if (data.source === 'simulation') {
+      dot.className = 'sd y';
+      dot.title = `Simulated — ${liveCount} live | refresh to re-generate`;
+    } else {
+      dot.className = 'sd g';
+      dot.title = `Live — ${data.source} | ${liveCount} live matches`;
+    }
 
   } catch (e) {
     dot.className = 'sd r';

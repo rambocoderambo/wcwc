@@ -9,7 +9,8 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 
 // ---------- CACHE ----------
-const cache = { ttl: 30 * 1000 };
+const cache = { ttl: 120 * 1000 };
+
 function getCached(key) {
   const c = cache[key];
   if (c && Date.now() - c.ts < cache.ttl) return c.data;
@@ -218,134 +219,6 @@ async function fetchBBC() {
   return [];
 }
 
-// ---------- SIMULATION ----------
-const TEAM_STRENGTH = {
-  'Argentina': 92, 'France': 91, 'Brazil': 90, 'England': 88, 'Belgium': 87,
-  'Netherlands': 86, 'Portugal': 85, 'Spain': 84, 'Germany': 83, 'Croatia': 82,
-  'Mexico': 78, 'United States': 76, 'Japan': 75, 'Morocco': 74, 'Senegal': 73,
-  'Switzerland': 72, 'Uruguay': 72, 'Colombia': 71, 'Ecuador': 70,
-  'Canada': 68, 'Australia': 67, 'Sweden': 66, 'Iran': 65, 'South Korea': 65,
-  'Saudi Arabia': 64, 'Turkey': 63, 'Norway': 62,
-  'Czech Republic': 69, 'Ivory Coast': 69, 'Egypt': 68, 'Ghana': 68,
-  'Scotland': 67, 'Paraguay': 66, 'Tunisia': 66, 'Bosnia and Herzegovina': 65,
-  'South Africa': 64, 'Qatar': 63, 'Curaçao': 62, 'Cape Verde': 61,
-  'Iraq': 60, 'Algeria': 59, 'Austria': 59, 'Jordan': 58,
-  'Haiti': 55, 'New Zealand': 54, 'Panama': 53, 'DR Congo': 52,
-  'Uzbekistan': 51,
-};
-
-function simulateScore(homeStr, awayStr) {
-  const hStr = TEAM_STRENGTH[homeStr] || 65;
-  const aStr = TEAM_STRENGTH[awayStr] || 65;
-
-  // Expected goals based on relative strength + home advantage
-  const hPower = Math.pow(hStr + 5, 2);
-  const aPower = Math.pow(aStr, 2);
-  const homeShare = hPower / (hPower + aPower);
-
-  // Random total goals (2.0-4.5 range, weighted toward lower end)
-  const totalGoals = 1.8 + Math.random() * 2.7;
-
-  const homeExpected = Math.max(0.2, totalGoals * homeShare);
-  const awayExpected = Math.max(0.2, totalGoals * (1 - homeShare));
-
-  // Poisson distribution for realistic football scores
-  function poisson(lambda) {
-    const L = Math.exp(-lambda);
-    let k = 0, p = 1;
-    do { k++; p *= Math.random(); } while (p > L);
-    return Math.min(k - 1, 10);
-  }
-
-  return { home: poisson(homeExpected), away: poisson(awayExpected) };
-}
-
-// Hardcoded group matchups from the HTML
-const GROUPS = [
-  {name:'A',teams:['Mexico','South Africa','South Korea','Czech Republic']},
-  {name:'B',teams:['Canada','Bosnia and Herzegovina','Qatar','Switzerland']},
-  {name:'C',teams:['Brazil','Morocco','Haiti','Scotland']},
-  {name:'D',teams:['United States','Paraguay','Australia','Turkey']},
-  {name:'E',teams:['Germany','Curaçao','Ivory Coast','Ecuador']},
-  {name:'F',teams:['Netherlands','Japan','Sweden','Tunisia']},
-  {name:'G',teams:['Belgium','Egypt','Iran','New Zealand']},
-  {name:'H',teams:['Spain','Cape Verde','Saudi Arabia','Uruguay']},
-  {name:'I',teams:['France','Senegal','Iraq','Norway']},
-  {name:'J',teams:['Argentina','Algeria','Austria','Jordan']},
-  {name:'K',teams:['Portugal','DR Congo','Uzbekistan','Colombia']},
-  {name:'L',teams:['England','Croatia','Ghana','Panama']}
-];
-const PAIRINGS = [[0,1],[2,3],[1,3],[0,2],[3,0],[2,1]];
-
-// Build lookup of all 72 valid World Cup group match pairings
-const WC_MATCH_KEYS = new Set();
-for (const g of GROUPS) {
-  for (const [hIdx, aIdx] of PAIRINGS) {
-    const home = g.teams[hIdx];
-    const away = g.teams[aIdx];
-    WC_MATCH_KEYS.add(home + '|' + away);
-  }
-}
-
-const MATCH_TIMES = [
-  ['Jun 12 03:00','Jun 12 10:00','Jun 19 00:00','Jun 19 09:00','Jun 25 09:00','Jun 25 09:00'],
-  ['Jun 13 03:00','Jun 14 03:00','Jun 19 03:00','Jun 19 06:00','Jun 25 03:00','Jun 25 03:00'],
-  ['Jun 14 06:00','Jun 14 09:00','Jun 20 06:00','Jun 20 08:30','Jun 25 06:00','Jun 25 06:00'],
-  ['Jun 13 09:00','Jun 14 12:00','Jun 20 03:00','Jun 20 11:00','Jun 26 10:00','Jun 26 10:00'],
-  ['Jun 15 01:00','Jun 15 07:00','Jun 21 04:00','Jun 21 08:00','Jun 26 04:00','Jun 26 04:00'],
-  ['Jun 15 04:00','Jun 15 10:00','Jun 21 01:00','Jun 21 12:00','Jun 26 07:00','Jun 26 07:00'],
-  ['Jun 16 03:00','Jun 16 09:00','Jun 22 03:00','Jun 22 09:00','Jun 27 11:00','Jun 27 11:00'],
-  ['Jun 16 00:00','Jun 16 06:00','Jun 22 00:00','Jun 22 06:00','Jun 27 08:00','Jun 27 08:00'],
-  ['Jun 17 03:00','Jun 17 06:00','Jun 23 05:00','Jun 23 08:00','Jun 27 03:00','Jun 27 03:00'],
-  ['Jun 17 09:00','Jun 17 12:00','Jun 23 01:00','Jun 23 11:00','Jun 28 10:00','Jun 28 10:00'],
-  ['Jun 18 01:00','Jun 18 10:00','Jun 24 01:00','Jun 24 10:00','Jun 28 07:30','Jun 28 07:30'],
-  ['Jun 18 04:00','Jun 18 07:00','Jun 24 04:00','Jun 24 07:00','Jun 28 05:00','Jun 28 05:00'],
-];
-
-function parseMatchTime(str) {
-  const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  const parts = str.split(' ');
-  const month = months[parts[0]];
-  const day = parseInt(parts[1]);
-  const [h, m] = parts[2].split(':').map(Number);
-  return new Date(2026, month, day, h, m).getTime();
-}
-
-function getSimulatedMatches() {
-  const now = Date.now();
-  const matches = [];
-
-  GROUPS.forEach((g, gi) => {
-    for (let m = 0; m < 6; m++) {
-      const home = g.teams[PAIRINGS[m][0]];
-      const away = g.teams[PAIRINGS[m][1]];
-      const matchStart = parseMatchTime(MATCH_TIMES[gi][m]);
-      const matchEnd = matchStart + 110 * 60 * 1000;
-      const key = g.name + '_' + m;
-
-      let status = 'UPCOMING';
-      let homeScore = null, awayScore = null;
-
-      if (now >= matchStart && now < matchEnd) {
-        status = 'LIVE';
-        const s = simulateScore(home, away);
-        const progress = Math.min((now - matchStart) / (110 * 60 * 1000), 1);
-        homeScore = Math.round(s.home * progress);
-        awayScore = Math.round(s.away * progress);
-      } else if (now >= matchEnd) {
-        status = 'FT';
-        const s = simulateScore(home, away);
-        homeScore = s.home;
-        awayScore = s.away;
-      }
-
-      matches.push({home, away, homeScore, awayScore, status, date: new Date(matchStart).toISOString(), source: 'simulation'});
-    }
-  });
-
-  return matches;
-}
-
 // ---------- ASIAN HANDICAP ODDS ----------
 const AH_CACHE = { ttl: 120 * 1000, data: null, ts: 0 };
 
@@ -418,7 +291,40 @@ async function getOdds() {
 }
 
 // ---------- SOURCE ROUTER ----------
+const APIFOOTBALL_KEY = process.env.APIFOOTBALL_KEY || '672aa02fe1cd2b77ec0d5fd6eb5526da3b797e4039b5396405fd27bb6308b012';
+
+async function fetchAPIFootballScores() {
+  const url = `https://apiv3.apifootball.com/?action=get_events&from=2026-06-11&to=2026-07-20&league_id=28&APIkey=${APIFOOTBALL_KEY}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'WC2026-Scoreboard/1.0' }
+  });
+  if (!res.ok) throw new Error(`API-Football ${res.status}`);
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+
+  return data.map(m => {
+    const home = normalizeName(m.match_hometeam_name || '');
+    const away = normalizeName(m.match_awayteam_name || '');
+    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
+    if (!isWorldCupMatch(home, away)) return null;
+
+    const status = m.match_status || '';
+    const hs = m.match_hometeam_score;
+    const as2 = m.match_awayteam_score;
+
+    return {
+      home, away,
+      homeScore: sanitizeScore(hs),
+      awayScore: sanitizeScore(as2),
+      status: status === 'Finished' ? 'FT' : (status === 'Ongoing' ? 'LIVE' : 'UPCOMING'),
+      date: m.match_date || null,
+      source: 'apifootball'
+    };
+  }).filter(Boolean);
+}
+
 const SOURCES = [
+  { name: 'apifootball', fn: fetchAPIFootballScores },
   { name: '365scores', fn: fetch365scores },
   { name: 'openligadb', fn: fetchOpenLigaDB },
   { name: 'bbc', fn: fetchBBC },
@@ -443,26 +349,13 @@ async function getMatches() {
   return { matches: [], source: 'none' };
 }
 
-function getSimulated() {
-  return { matches: getSimulatedMatches(), source: 'simulation' };
-}
-
 // ---------- ROUTES ----------
 app.get('/api/matches', async (req, res) => {
   try {
     const result = await getMatches();
     res.json(result);
   } catch (e) {
-    const fallback = getSimulated();
-    res.json(fallback);
-  }
-});
-
-app.get('/api/simulate', (req, res) => {
-  try {
-    res.json(getSimulated());
-  } catch (e) {
-    res.json({ matches: [], source: 'simulation-error', error: e.message });
+    res.json({ matches: [], source: 'error', error: e.message });
   }
 });
 
@@ -501,7 +394,6 @@ if (require.main === module) {
     console.log(`WC 2026 Live Score Server running on http://localhost:${PORT}`);
     console.log(`Endpoints:`);
     console.log(`  GET /api/matches   - all matches with live scores`);
-    console.log(`  GET /api/simulate  - simulated matches`);
     console.log(`  GET /api/status    - server status`);
     console.log(`  GET /api/odds      - Asian Handicap odds`);
   });
