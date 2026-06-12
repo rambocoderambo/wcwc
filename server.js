@@ -208,9 +208,15 @@ const TEAM_STRENGTH = {
   'Argentina': 92, 'France': 91, 'Brazil': 90, 'England': 88, 'Belgium': 87,
   'Netherlands': 86, 'Portugal': 85, 'Spain': 84, 'Germany': 83, 'Croatia': 82,
   'Mexico': 78, 'United States': 76, 'Japan': 75, 'Morocco': 74, 'Senegal': 73,
-  'Switzerland': 72, 'Uruguay': 72, 'Colombia': 71, 'Germany': 83, 'Ecuador': 70,
+  'Switzerland': 72, 'Uruguay': 72, 'Colombia': 71, 'Ecuador': 70,
   'Canada': 68, 'Australia': 67, 'Sweden': 66, 'Iran': 65, 'South Korea': 65,
-  'Saudi Arabia': 64, 'Turkey': 63, 'Norway': 62, 'Wales': 61, 'Poland': 60,
+  'Saudi Arabia': 64, 'Turkey': 63, 'Norway': 62,
+  'Czech Republic': 69, 'Ivory Coast': 69, 'Egypt': 68, 'Ghana': 68,
+  'Scotland': 67, 'Paraguay': 66, 'Tunisia': 66, 'Bosnia and Herzegovina': 65,
+  'South Africa': 64, 'Qatar': 63, 'Curaçao': 62, 'Cape Verde': 61,
+  'Iraq': 60, 'Algeria': 59, 'Austria': 59, 'Jordan': 58,
+  'Haiti': 55, 'New Zealand': 54, 'Panama': 53, 'DR Congo': 52,
+  'Uzbekistan': 51,
 };
 
 function simulateScore(homeStr, awayStr) {
@@ -285,7 +291,8 @@ const SIM_CACHE = {};
 function getSimulatedMatches() {
   const now = Date.now();
   const matches = [];
-  let changed = false;
+  // Clear cache each time so scores regenerate fresh for a new session
+  // (but stay consistent within the same session via caching)
 
   GROUPS.forEach((g, gi) => {
     for (let m = 0; m < 6; m++) {
@@ -298,52 +305,34 @@ function getSimulatedMatches() {
       let status = 'UPCOMING';
       let homeScore = null, awayScore = null;
 
-      if (!SIM_CACHE[key] || (now >= matchEnd && SIM_CACHE[key].status !== 'FT')) {
-        // Determine final result for matches that have ended
-        if (now >= matchEnd) {
-          status = 'FT';
-          const s = simulateScore(home, away);
-          homeScore = s.home;
-          awayScore = s.away;
-          SIM_CACHE[key] = { homeScore, awayScore, status: 'FT' };
-          changed = true;
-        } else if (now >= matchStart) {
+      if (!SIM_CACHE[key]) {
+        // Always generate a score regardless of time, so auto-refresh works instantly
+        const s = simulateScore(home, away);
+        homeScore = s.home;
+        awayScore = s.away;
+
+        if (now >= matchStart && now < matchEnd) {
           status = 'LIVE';
-          const elapsed = Math.floor((now - matchStart) / 60000);
-          const simulated = simulateScore(home, away);
-          const scaled = Math.min(elapsed, 105);
-          const progress = scaled / 105;
-          homeScore = Math.round(simulated.home * progress);
-          awayScore = Math.round(simulated.away * progress);
-          SIM_CACHE[key] = { homeScore, awayScore, status: 'LIVE', ts: now };
-          changed = true;
+        } else if (now >= matchEnd) {
+          status = 'FT';
+        } else {
+          status = 'UPCOMING';
         }
+        SIM_CACHE[key] = { homeScore, awayScore, status };
       } else {
-        // Use cached result
         homeScore = SIM_CACHE[key].homeScore;
         awayScore = SIM_CACHE[key].awayScore;
         status = SIM_CACHE[key].status;
-        // Update LIVE progress
+        // Transition LIVE to FT if time passed
         if (status === 'LIVE' && now >= matchEnd) {
           status = 'FT';
-          const s = simulateScore(home, away);
-          homeScore = s.home;
-          awayScore = s.away;
-          SIM_CACHE[key] = { homeScore, awayScore, status: 'FT' };
-          changed = true;
+          SIM_CACHE[key].status = 'FT';
         }
       }
 
       matches.push({home, away, homeScore, awayScore, status, date: new Date(matchStart).toISOString(), source: 'simulation'});
     }
   });
-
-  // Clean old LIVE timestamp keys
-  for (const [k, v] of Object.entries(SIM_CACHE)) {
-    if (v.status === 'LIVE' && now - (v.ts || 0) > 120000) {
-      delete SIM_CACHE[k];
-    }
-  }
 
   return matches;
 }
@@ -427,26 +416,48 @@ const SOURCES = [
 ];
 
 async function getMatches() {
-  // Check cache
   const cached = getCached('matches');
   if (cached) return cached;
+
+  // Always generate simulation base (all 72 matches with scores)
+  const simMatches = getSimulatedMatches();
+
+  // Try live sources and overlay real scores
+  let liveSource = 'simulation';
+  const liveMap = {};
 
   for (const source of SOURCES) {
     try {
       const matches = await source.fn();
       if (matches && matches.length > 0) {
-        setCache('matches', { matches, source: source.name });
-        return { matches, source: source.name };
+        liveSource = source.name;
+        for (const m of matches) {
+          if (m.homeScore !== null && m.awayScore !== null) {
+            const k = m.home + '|' + m.away;
+            liveMap[k] = m;
+          }
+        }
+        break; // Use first successful source
       }
     } catch (e) {
       console.log(`Source ${source.name} failed: ${e.message}`);
     }
   }
 
-  // Fallback to simulation
-  const simulated = getSimulatedMatches();
-  setCache('matches', { matches: simulated, source: 'simulation' });
-  return { matches: simulated, source: 'simulation' };
+  // Overlay live scores on simulation base
+  for (const m of simMatches) {
+    const k = m.home + '|' + m.away;
+    const live = liveMap[k];
+    if (live) {
+      m.homeScore = live.homeScore;
+      m.awayScore = live.awayScore;
+      m.status = live.status || 'FT';
+      m.source = liveSource;
+    }
+  }
+
+  setCache('matches', { matches: simMatches, source: liveSource });
+  return { matches: simMatches, source: liveSource };
 }
 
 function getSimulated() {
