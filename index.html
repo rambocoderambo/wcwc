@@ -249,7 +249,7 @@ async function fetchOdds() {
 }
 
 function applyOdds() {
-  document.querySelectorAll('.ah').forEach(el => {
+  document.querySelectorAll('.ah, .nc-ah').forEach(el => {
     const home = el.dataset.home;
     const away = el.dataset.away;
     const key = home + '|' + away;
