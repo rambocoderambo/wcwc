@@ -73,6 +73,9 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 .nm .nc .ncd.ft{color:#64748b}
 .nm .nc .nteams{font-size:.78rem;font-weight:600;margin:4px 0}
 .nm .nc .ninfo{font-size:.6rem;color:#64748b}
+.nm .nc .nc-ah{font-size:.58rem;text-align:center;padding:2px 0;min-height:16px}
+.nm .nc .nc-ah .lv{color:#a78bfa;font-weight:600}
+.nm .nc .nc-ah .ld{color:#475569}
 .clock{font-size:.75rem;color:#64748b;margin-top:6px;font-weight:600;letter-spacing:.5px}
 .clock .tm{color:#60a5fa;font-variant-numeric:tabular-nums}
 .cd{font-size:.55rem;color:#64748b;grid-column:1/-1;text-align:center;padding-top:1px;min-height:14px}
@@ -566,6 +569,12 @@ function getAllMatches() {
   return list;
 }
 
+function getOddsLine(home, away) {
+  const entry = oddsMap[home + '|' + away];
+  if (entry) return '<span class="lv">AH ' + entry.line + '</span>';
+  return '<span class="ld">--</span>';
+}
+
 function renderNextMatches() {
   const el = document.getElementById('nextRow');
   const p = document.getElementById('nextMatches');
@@ -588,6 +597,7 @@ function renderNextMatches() {
     else { cd = '⏳ ' + Math.floor(diff/86400000) + 'd ' + Math.floor((diff%86400000)/3600000) + 'h'; }
     return `<div class="nc"><div class="ncd ${cls}">${cd}</div>` +
       `<div class="nteams">${flags[m.home]||''} ${m.home}<br>${flags[m.away]||''} ${m.away}</div>` +
+      `<div class="nc-ah" data-home="${m.home}" data-away="${m.away}">${getOddsLine(m.home, m.away)}</div>` +
       `<div class="ninfo">📋 ${m.round}</div></div>`;
   }).join('');
 }
@@ -1042,6 +1052,7 @@ function applyMatches(apiMatches) {
 // ---------- INIT ----------
 try { const d = localStorage.getItem('wc26'); if(d) { scores = JSON.parse(d); } } catch(e) {}
 render();
+fetchOdds();
 toggleAutoRefresh();
 setTimeout(() => { if (document.querySelector('.cd')) updateCountdowns(); }, 200);
 </script>
