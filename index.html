@@ -1042,6 +1042,7 @@ function applyMatches(apiMatches) {
 // ---------- INIT ----------
 try { const d = localStorage.getItem('wc26'); if(d) { scores = JSON.parse(d); } } catch(e) {}
 render();
+toggleAutoRefresh();
 setTimeout(() => { if (document.querySelector('.cd')) updateCountdowns(); }, 200);
 </script>
 </body>
