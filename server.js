@@ -305,7 +305,7 @@ const GROUPS = [
   {name:'K',teams:['Portugal','DR Congo','Uzbekistan','Colombia']},
   {name:'L',teams:['England','Croatia','Ghana','Panama']}
 ];
-const PAIRINGS = [[0,1],[2,3],[1,3],[0,2],[3,0],[2,1]];
+const PAIRINGS = [[0,1],[2,3],[3,1],[0,2],[3,0],[1,2]];
 const WC_MATCH_KEYS = new Set();
 for (const g of GROUPS) {
   for (const [hIdx, aIdx] of PAIRINGS) {
