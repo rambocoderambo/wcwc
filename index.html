@@ -67,7 +67,7 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 .nm{background:#0c1220;border:1px solid #1e293b;border-radius:8px;padding:12px;margin-bottom:16px}
 .nm h2{font-size:.85rem;font-weight:700;color:#93c5fd;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
 .nm .nw{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
-.nm .nc{flex:0 0 210px;background:#060a1a;border:1px solid #1e293b;border-radius:6px;padding:10px;min-height:80px}
+.nm .nc{flex:0 0 240px;background:#060a1a;border:1px solid #1e293b;border-radius:6px;padding:10px;min-height:80px}
 .nm .nc .ncd{font-size:.55rem;color:#22c55e;font-weight:700;margin-bottom:4px;min-height:14px}
 .nm .nc .ncd.lv{animation:blink 1.2s ease-in-out infinite}
 .nm .nc .ncd.ft{color:#64748b}
@@ -566,7 +566,7 @@ function getAllMatches() {
       const ts = getMatchTs(gi, m);
       const sc = scores[k];
       const played = sc && sc[0] !== '' && sc[1] !== '';
-      list.push({ ts, home, away, key: k, played, round: 'Group '+g.name, group: true });
+      list.push({ ts, home, away, key: k, played, round: 'Group '+g.name, group: true, myt: MATCH_TIMES[gi][m] });
     }
   });
   return list;
@@ -601,7 +601,7 @@ function renderNextMatches() {
     return `<div class="nc"><div class="ncd ${cls}">${cd}</div>` +
       `<div class="nteams">${flags[m.home]||''} ${m.home}<br>${flags[m.away]||''} ${m.away}</div>` +
       `<div class="nc-ah" data-home="${m.home}" data-away="${m.away}">${getOddsLine(m.home, m.away)}</div>` +
-      `<div class="ninfo">📋 ${m.round}</div></div>`;
+      `<div class="ninfo">📋 ${m.round} · ${m.myt}</div></div>`;
   }).join('');
 }
 
