@@ -585,7 +585,7 @@ function renderNextMatches() {
   if (!el || !p) return;
 
   const all = getAllMatches().filter(m => !m.played).sort((a, b) => a.ts - b.ts);
-  const next = all.slice(0, 4);
+  const next = all.slice(0, 6);
 
   if (next.length === 0) { p.style.display = 'none'; return; }
   p.style.display = '';
