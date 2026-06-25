@@ -324,36 +324,38 @@ for (const g of GROUPS) {
 }
 
 // ---------- SOURCE ROUTER ----------
-const APIFOOTBALL_KEY = process.env.APIFOOTBALL_KEY || '672aa02fe1cd2b77ec0d5fd6eb5526da3b797e4039b5396405fd27bb6308b012';
+const APIFOOTBALL_KEYS = [
+  process.env.APIFOOTBALL_KEY || '672aa02fe1cd2b77ec0d5fd6eb5526da3b797e4039b5396405fd27bb6308b012',
+  '9a5b43f6a5b8f9f26a460689317f7ac4'
+];
 
 async function fetchAPIFootballScores() {
-  const url = `https://apiv3.apifootball.com/?action=get_events&from=2026-06-11&to=2026-07-20&league_id=28&APIkey=${APIFOOTBALL_KEY}`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'WC2026-Scoreboard/1.0' }
-  });
-  if (!res.ok) throw new Error(`API-Football ${res.status}`);
-  const data = await res.json();
-  if (!Array.isArray(data)) return [];
+  for (const key of APIFOOTBALL_KEYS) {
+    try {
+      const url = `https://apiv3.apifootball.com/?action=get_events&from=2026-06-11&to=2026-07-20&league_id=28&APIkey=${key}`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'WC2026-Scoreboard/1.0' } });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!Array.isArray(data)) continue;
 
-  return data.map(m => {
-    const home = normalizeName(m.match_hometeam_name || '');
-    const away = normalizeName(m.match_awayteam_name || '');
-    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
-    if (!isWorldCupMatch(home, away)) return null;
-
-    const status = m.match_status || '';
-    const hs = m.match_hometeam_score;
-    const as2 = m.match_awayteam_score;
-
-    return {
-      home, away,
-      homeScore: sanitizeScore(hs),
-      awayScore: sanitizeScore(as2),
-      status: status === 'Finished' ? 'FT' : (status === 'Ongoing' ? 'LIVE' : 'UPCOMING'),
-      date: m.match_date || null,
-      source: 'apifootball'
-    };
-  }).filter(Boolean);
+      return data.map(m => {
+        const home = normalizeName(m.match_hometeam_name || '');
+        const away = normalizeName(m.match_awayteam_name || '');
+        if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
+        if (!isWorldCupMatch(home, away)) return null;
+        const status = m.match_status || '';
+        return {
+          home, away,
+          homeScore: sanitizeScore(m.match_hometeam_score),
+          awayScore: sanitizeScore(m.match_awayteam_score),
+          status: status === 'Finished' ? 'FT' : (status === 'Ongoing' ? 'LIVE' : 'UPCOMING'),
+          date: m.match_date || null,
+          source: 'apifootball'
+        };
+      }).filter(Boolean);
+    } catch (e) { /* try next key */ }
+  }
+  return [];
 }
 
 const SOURCES = [
