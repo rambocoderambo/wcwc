@@ -144,21 +144,6 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 
 <script>
 // ---------- DATA ----------
-const flags = {
-'Mexico':'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰🇷','Czech Republic':'🇨🇿',
-'Canada':'🇨🇦','Bosnia and Herzegovina':'🇧🇦','Qatar':'🇶🇦','Switzerland':'🇨🇭',
-'Brazil':'🇧🇷','Morocco':'🇲🇦','Haiti':'🇭🇹','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-'United States':'🇺🇸','Paraguay':'🇵🇾','Australia':'🇦🇺','Turkey':'🇹🇷',
-'Germany':'🇩🇪','Curaçao':'🇨🇼','Ivory Coast':'🇨🇮','Ecuador':'🇪🇨',
-'Netherlands':'🇳🇱','Japan':'🇯🇵','Sweden':'🇸🇪','Tunisia':'🇹🇳',
-'Belgium':'🇧🇪','Egypt':'🇪🇬','Iran':'🇮🇷','New Zealand':'🇳🇿',
-'Spain':'🇪🇸','Cape Verde':'🇨🇻','Saudi Arabia':'🇸🇦','Uruguay':'🇺🇾',
-'France':'🇫🇷','Senegal':'🇸🇳','Iraq':'🇮🇶','Norway':'🇳🇴',
-'Argentina':'🇦🇷','Algeria':'🇩🇿','Austria':'🇦🇹','Jordan':'🇯🇴',
-'Portugal':'🇵🇹','DR Congo':'🇨🇩','Uzbekistan':'🇺🇿','Colombia':'🇨🇴',
-'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Croatia':'🇭🇷','Ghana':'🇬🇭','Panama':'🇵🇦'
-};
-
 const groups = [
 {name:'A',teams:['Mexico','South Africa','South Korea','Czech Republic']},
 {name:'B',teams:['Canada','Bosnia and Herzegovina','Qatar','Switzerland']},
@@ -601,7 +586,7 @@ function renderNextMatches() {
     else if (diff < 86400000) { cd = '⏳ ' + Math.floor(diff/3600000) + 'h ' + Math.floor((diff%3600000)/60000) + 'm'; }
     else { cd = '⏳ ' + Math.floor(diff/86400000) + 'd ' + Math.floor((diff%86400000)/3600000) + 'h'; }
     return `<div class="nc"><div class="ncd ${cls}">${cd}</div>` +
-      `<div class="nteams">${flags[m.home]||''} ${m.home}<br>${flags[m.away]||''} ${m.away}</div>` +
+      `<div class="nteams">${m.home}<br>${m.away}</div>` +
       `<div class="nc-ah" data-home="${m.home}" data-away="${m.away}">${getOddsLine(m.home, m.away)}</div>` +
       `<div class="ninfo">📋 ${m.round} · ${m.myt}</div></div>`;
   }).join('');
@@ -633,7 +618,7 @@ function renderGroups() {
       if(s[0]!==''||s[1]!=='') any=true;
     }
     
-    let html = `<div class="gh"><div><h3>${flags[g.teams[0]]||''} Group ${g.name}</h3></div><span class="st ${done?'s2':(any?'s1':'s0')}">${done?'✅ Done':(any?'▶ Live':'⏳ Pending')}</span></div>`;
+    let html = `<div class="gh"><div><h3>Group ${g.name}</h3></div><span class="st ${done?'s2':(any?'s1':'s0')}">${done?'✅ Done':(any?'▶ Live':'⏳ Pending')}</span></div>`;
     html += `<table><thead><tr><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead><tbody>`;
     
     r.forEach(s => {
@@ -641,7 +626,7 @@ function renderGroups() {
       if(s.pos===1){rc='r1';pn='1';pc='p1';}
       else if(s.pos===2){rc='r2';pn='2';pc='p2';}
       else if(s.pos===3){rc='r3';pn='3';pc='p3';}
-      html += `<tr class="${rc}"><td><span class="pb ${pc}">${pn}</span>${flags[s.team]||''} ${s.team}</td><td>${s.pl}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}</td><td>${s.ga}</td><td>${s.gd>0?'+':''}${s.gd}</td><td style="font-weight:700;color:${s.pts>=6?'#4ade80':s.pts>=3?'#facc15':'#f87171'}">${s.pts}</td></tr>`;
+      html += `<tr class="${rc}"><td><span class="pb ${pc}">${pn}</span>${s.team}</td><td>${s.pl}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td><td>${s.gf}</td><td>${s.ga}</td><td>${s.gd>0?'+':''}${s.gd}</td><td style="font-weight:700;color:${s.pts>=6?'#4ade80':s.pts>=3?'#facc15':'#f87171'}">${s.pts}</td></tr>`;
     });
     
     html += `</tbody></table><div class="ms"><h4>📅 Matches</h4>`;
@@ -650,11 +635,11 @@ function renderGroups() {
       const home = g.teams[pairings[m][0]], away = g.teams[pairings[m][1]];
       const sc = scores[k]||['',''];
       const played = sc[0]!==''&&sc[1]!=='';
-html += `<div class="mr"><div class="mt" style="text-align:right">${flags[home]||''} ${home}</div>`;
+html += `<div class="mr"><div class="mt" style="text-align:right">${home}</div>`;
 html += `<input class="mi" value="${sc[0]}" placeholder="-" maxlength="2" oninput="onGroupScore('${k}',0,this.value)">`;
 html += `<span class="mv">vs</span>`;
 html += `<input class="mi" value="${sc[1]}" placeholder="-" maxlength="2" oninput="onGroupScore('${k}',1,this.value)">`;
-html += `<div class="mt">${flags[away]||''} ${away}</div><div class="dt">📆 ${MATCH_TIMES[gi][m]}</div>`;
+html += `<div class="mt">${away}</div><div class="dt">📆 ${MATCH_TIMES[gi][m]}</div>`;
 html += `<div class="cd" data-ts="${getMatchTs(gi,m)}" data-key="${k}">⏳ --</div>`;
 html += `<div class="ah" data-home="${home}" data-away="${away}">--</div></div>`;
     }
