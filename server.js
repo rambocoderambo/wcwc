@@ -35,8 +35,18 @@ const NAME_ALIASES = {
   'curacao': 'Curaçao', 'curaçao': 'Curaçao',
    'south africa': 'South Africa',
    'mexico': 'Mexico', 'canada': 'Canada', 'brazil': 'Brazil',
-  'morocco': 'Morocco', 'haiti': 'Haiti', 'scotland': 'Scotland',
-  'paraguay': 'Paraguay', 'australia': 'Australia',
+   'mexiko': 'Mexico', 'südafrika': 'South Africa', 'suedafrika': 'South Africa',
+   'südkorea': 'South Korea', 'suedkorea': 'South Korea',
+   'tschechien': 'Czech Republic', 'kanada': 'Canada',
+   'bosnien und herzegowina': 'Bosnia and Herzegovina',
+   'kroatien': 'Croatia', 'niederlande': 'Netherlands',
+   'spanien': 'Spain', 'portugal': 'Portugal', 'frankreich': 'France',
+   'argentinien': 'Argentina', 'deutschland': 'Germany', 'england': 'England',
+   'belgien': 'Belgium', 'schweiz': 'Switzerland', 'schweden': 'Sweden',
+   'ecuador': 'Ecuador', 'japan': 'Japan', 'iran': 'Iran',
+   'brasilien': 'Brazil', 'marokko': 'Morocco', 'schottland': 'Scotland',
+   'australien': 'Australia', 'türkei': 'Turkey', 'tuerkei': 'Turkey',
+   'paraguay': 'Paraguay', 'australia': 'Australia',
   'germany': 'Germany', 'ecuador': 'Ecuador',
   'japan': 'Japan', 'sweden': 'Sweden', 'tunisia': 'Tunisia',
   'belgium': 'Belgium', 'egypt': 'Egypt', 'iran': 'Iran',
@@ -137,7 +147,7 @@ async function fetchOpenLigaDB() {
     const home = normalizeName(m.team1?.teamName || '');
     const away = normalizeName(m.team2?.teamName || '');
     const results = m.matchResults || [];
-    const ftResult = results.find(r => r.resultTypeId === 2);
+    const ftResult = results.find(r => r.resultName === 'Endergebnis');
 
     let status = 'UPCOMING';
     if (m.matchIsFinished) status = 'FT';
@@ -347,9 +357,9 @@ async function fetchAPIFootballScores() {
 }
 
 const SOURCES = [
+  { name: 'openligadb', fn: fetchOpenLigaDB },
   { name: 'apifootball', fn: fetchAPIFootballScores },
   { name: '365scores', fn: fetch365scores },
-  { name: 'openligadb', fn: fetchOpenLigaDB },
   { name: 'bbc', fn: fetchBBC },
 ];
 
