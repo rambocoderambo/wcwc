@@ -391,7 +391,6 @@ async function fetchFootballData() {
 
 const SOURCES = [
   { name: 'football-data', fn: fetchFootballData },
-  { name: 'openligadb', fn: fetchOpenLigaDB },
   { name: 'apifootball', fn: fetchAPIFootballScores },
   { name: '365scores', fn: fetch365scores },
   { name: 'bbc', fn: fetchBBC },
