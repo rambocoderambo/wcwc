@@ -25,11 +25,11 @@ const NAME_ALIASES = {
   'south korea': 'South Korea', 'korea republic': 'South Korea', 'korea': 'South Korea',
   'czech republic': 'Czech Republic', 'czechia': 'Czech Republic',
   'ivory coast': 'Ivory Coast', "côte d'ivoire": 'Ivory Coast', 'cote d\'ivoire': 'Ivory Coast',
-   'dr congo': 'DR Congo', 'congo dr': 'DR Congo', 'drc': 'DR Congo', 'congo drc': 'DR Congo', 'd.r. congo': 'DR Congo', 'democratic rep congo': 'DR Congo',
-  'netherlands': 'Netherlands', 'holland': 'Netherlands',
+   'dr congo': 'DR Congo', 'congo dr': 'DR Congo', 'drc': 'DR Congo', 'congo drc': 'DR Congo', 'd.r. congo': 'DR Congo', 'democratic rep congo': 'DR Congo', 'congo dr': 'DR Congo',
+   'netherlands': 'Netherlands', 'holland': 'Netherlands',
   'turkey': 'Turkey', 'türkiye': 'Turkey', 'turkiye': 'Turkey',
-  'cape verde': 'Cape Verde', 'cabo verde': 'Cape Verde',
-   'bosnia and herzegovina': 'Bosnia and Herzegovina', 'bosnia': 'Bosnia and Herzegovina', 'bosnia & herzegovina': 'Bosnia and Herzegovina', 'bosnia herzegovina': 'Bosnia and Herzegovina',
+   'cape verde': 'Cape Verde', 'cabo verde': 'Cape Verde', 'cape verde islands': 'Cape Verde',
+   'bosnia and herzegovina': 'Bosnia and Herzegovina', 'bosnia': 'Bosnia and Herzegovina', 'bosnia & herzegovina': 'Bosnia and Herzegovina', 'bosnia herzegovina': 'Bosnia and Herzegovina', 'bosnia-herzegovina': 'Bosnia and Herzegovina',
   'saudi arabia': 'Saudi Arabia', 'saudi': 'Saudi Arabia',
   'new zealand': 'New Zealand',
   'curacao': 'Curaçao', 'curaçao': 'Curaçao',
@@ -319,7 +319,10 @@ const PAIRINGS = [[0,1],[2,3],[3,1],[0,2],[3,0],[1,2]];
 const WC_MATCH_KEYS = new Set();
 for (const g of GROUPS) {
   for (const [hIdx, aIdx] of PAIRINGS) {
-    WC_MATCH_KEYS.add(g.teams[hIdx] + '|' + g.teams[aIdx]);
+    const home = g.teams[hIdx];
+    const away = g.teams[aIdx];
+    WC_MATCH_KEYS.add(home + '|' + away);
+    WC_MATCH_KEYS.add(away + '|' + home);
   }
 }
 
