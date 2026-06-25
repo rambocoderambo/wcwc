@@ -358,7 +358,39 @@ async function fetchAPIFootballScores() {
   return [];
 }
 
+const FOOTBALL_DATA_KEY = process.env.FOOTBALL_DATA_KEY || '9ce776b7a6ce49c58d8e7280bf4b7aab';
+
+async function fetchFootballData() {
+  const url = 'https://api.football-data.org/v4/competitions/2000/matches?dateFrom=2026-06-11&dateTo=2026-07-19';
+  const res = await fetch(url, { headers: { 'X-Auth-Token': FOOTBALL_DATA_KEY } });
+  if (!res.ok) throw new Error(`football-data.org ${res.status}`);
+  const body = await res.json();
+  if (!body.matches) return [];
+
+  return body.matches.map(m => {
+    const home = normalizeName(m.homeTeam?.name || '');
+    const away = normalizeName(m.awayTeam?.name || '');
+    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
+    if (!isWorldCupMatch(home, away)) return null;
+
+    const statusMap = { 'FINISHED': 'FT', 'IN_PLAY': 'LIVE', 'PAUSED': 'LIVE', 'SCHEDULED': 'UPCOMING', 'TIMED': 'UPCOMING', 'POSTPONED': 'UPCOMING' };
+    const ft = m.score?.fullTime || {};
+    const homeScore = ft.home !== null && ft.home !== undefined ? ft.home : null;
+    const awayScore = ft.away !== null && ft.away !== undefined ? ft.away : null;
+
+    return {
+      home, away,
+      homeScore: sanitizeScore(homeScore),
+      awayScore: sanitizeScore(awayScore),
+      status: statusMap[m.status] || 'UPCOMING',
+      date: m.utcDate || null,
+      source: 'football-data'
+    };
+  }).filter(Boolean);
+}
+
 const SOURCES = [
+  { name: 'football-data', fn: fetchFootballData },
   { name: 'openligadb', fn: fetchOpenLigaDB },
   { name: 'apifootball', fn: fetchAPIFootballScores },
   { name: '365scores', fn: fetch365scores },
