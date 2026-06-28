@@ -250,16 +250,27 @@ function handicapToFraction(h) {
 }
 
 async function scrapeClassicAsianBookie() {
-  // Direct fetch to ColdFusion page with CLASSIC=1 cookie
-  // Works on both local and Vercel (no Cloudflare bypass needed with this cookie + headers)
-  const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Cookie': 'CLASSIC=1',
-      'Accept': 'text/html'
-    }
-  });
-  const html = await res.text();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let html;
+  try {
+    const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cookie': 'CLASSIC=1; DOMAINCOUNTRY=MY; COUNTRY=MY'
+      }
+    });
+    clearTimeout(timeout);
+    html = await res.text();
+    if (!html.includes(' vs ')) throw new Error('No match data');
+  } catch (e) {
+    clearTimeout(timeout);
+    throw e;
+  }
 
   const $ = cheerio.load(html);
   $('script, style, link, meta, noscript, iframe').remove();
@@ -268,17 +279,13 @@ async function scrapeClassicAsianBookie() {
 
   const results = new Map();
 
-  // Find match data with AH odds - look for date lines
   for (let i = 0; i < lines.length - 6; i++) {
-    // Match date patterns like "29/Jun  03:00" or "30/Jun  01:00"
     if (!/^\d{1,2}\/[A-Z][a-z]{2}\s+\d{2}:\d{2}$/.test(lines[i])) continue;
     const team1 = lines[i + 1] || '';
     const vs = lines[i + 2] || '';
     const team2 = lines[i + 3] || '';
     if (vs !== 'vs') continue;
     if (!team1 || !team2 || /^[\d.]+$/.test(team1) || /^[\d.]+$/.test(team2)) continue;
-
-    const odds = lines[i + 4] || '';
     const ahLine = lines[i + 5] || '';
     if (!ahLine.includes(':') || !/[\d\/]/.test(ahLine)) continue;
 
@@ -334,6 +341,7 @@ async function getOdds() {
 
   AH_CACHE.data = Array.from(data.values());
   AH_CACHE.ts = Date.now();
+  console.log(`Odds: ${AH_CACHE.data.length} matches (1st src: classic scrape, 2nd: beta API)`);
   return AH_CACHE.data;
 }
 

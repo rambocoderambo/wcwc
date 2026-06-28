@@ -562,6 +562,25 @@ function getAllMatches() {
       list.push({ ts, home, away, key: k, played, round: 'Group '+g.name, group: true, myt: MATCH_TIMES[gi][m] });
     }
   });
+  // Add knockout matches
+  const koRounds = [
+    { key: 'R32', count: 16, label: 'Round of 32' },
+    { key: 'R16', count: 8, label: 'Round of 16' },
+    { key: 'QF', count: 4, label: 'Quarter-final' },
+    { key: 'SF', count: 2, label: 'Semi-final' },
+    { key: 'FIN', count: 1, label: 'Final' },
+    { key: '3RD', count: 1, label: '3rd Place' },
+  ];
+  for (const r of koRounds) {
+    for (let i = 1; i <= r.count; i++) {
+      const key = r.key === 'FIN' ? 'FIN' : (r.key === '3RD' ? '3RD' : r.key + '_' + i);
+      const teams = getTeams(r.key, i);
+      const ts = getKOTs(r.key, i);
+      const sc = scores[key];
+      const played = sc && sc[0] !== '' && sc[1] !== '';
+      list.push({ ts, home: teams.h, away: teams.a, key, played, round: r.label, myt: KO_TIMES[r.key]?.[i-1] || '' });
+    }
+  }
   return list;
 }
 
@@ -576,7 +595,7 @@ function renderNextMatches() {
   const p = document.getElementById('nextMatches');
   if (!el || !p) return;
 
-  const all = getAllMatches().filter(m => !m.played).sort((a, b) => a.ts - b.ts);
+  const all = getAllMatches().filter(m => !m.played && m.home !== 'TBD' && m.away !== 'TBD').sort((a, b) => a.ts - b.ts);
   const next = all.slice(0, 6);
 
   if (next.length === 0) { p.style.display = 'none'; return; }
