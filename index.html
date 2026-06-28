@@ -594,15 +594,15 @@ function renderNextMatches() {
   const p = document.getElementById('nextMatches');
   if (!el || !p) return;
 
-  const all = getAllMatches().filter(m => !m.played && m.home !== 'TBD' && m.away !== 'TBD').sort((a, b) => a.ts - b.ts);
+  const now2 = Date.now();
+  const all = getAllMatches().filter(m => !m.played && m.home !== 'TBD' && m.away !== 'TBD' && m.ts > now2 - 110 * 60000).sort((a, b) => a.ts - b.ts);
   const next = all.slice(0, 6);
 
   if (next.length === 0) { p.style.display = 'none'; return; }
   p.style.display = '';
 
   el.innerHTML = next.map(m => {
-    const now = Date.now();
-    const diff = m.ts - now;
+    const diff = m.ts - now2;
     let cd, cls = '';
     if (diff <= 0 && diff > -110 * 60000) { cd = '🔴 LIVE'; cls = 'lv'; }
     else if (diff <= -110 * 60000) { cd = '✅ FT'; cls = 'ft'; }
