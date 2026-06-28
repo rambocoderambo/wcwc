@@ -51,9 +51,10 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 .bc{overflow-x:auto;padding:8px 0}
 .br{display:flex;gap:10px;min-width:1050px}
 .rd{flex:1;min-width:145px}
-.rd h5{font-size:.55rem;color:#94a3b8;text-align:center;border-bottom:1px solid #1e293b;padding-bottom:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-.rd .hi{font-size:.55rem;color:#94a3b8;text-align:center;margin-bottom:8px}
+.rd h5{font-size:.5rem;color:#94a3b8;text-align:center;border-bottom:1px solid #1e293b;padding-bottom:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.rd .hi{font-size:.5rem;color:#94a3b8;text-align:center;margin-bottom:8px}
 .bm{background:#060a1a;border:1px solid #1e293b;border-radius:5px;padding:4px 6px;margin-bottom:5px}
+.bm .dt{font-size:.5rem;color:#94a3b8;text-align:center}
 .bt{display:flex;align-items:center;gap:3px;padding:2px 0;font-size:.68rem}
 .bt .nm{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bt .bi{width:22px;height:22px;text-align:center;font-size:.65rem;font-weight:700;background:#0a0f1c;border:1px solid #1e293b;border-radius:3px;color:#e2e8f0;font-family:inherit}
@@ -710,7 +711,7 @@ function renderBracket() {
 const koTime = KO_TIMES[rd.key] && KO_TIMES[rd.key][i-1] ? KO_TIMES[rd.key][i-1] : '';
 const koTS = getKOTs(rd.key, i);
 html += `<div class="bm${rd.fin?' fn':''}>
-  ${koTime ? `<div class="dt" style="padding-bottom:3px;border-bottom:1px solid #0a0f1c;margin-bottom:3px;">📆 ${koTime}</div>` : ''}
+  ${koTime ? `<div class="dt">📆 ${koTime}</div>` : ''}
   <div class="cd" data-ts="${koTS}" data-key="${key}">⏳ --</div>
   <div class="bt${hW?' w':(aW?' l':'')}"><span class="nm">${teams.h}</span>
           <input class="bi" value="${sc[0]}" placeholder="-" maxlength="2" oninput="onKOScore('${key}',0,this.value)"></div>
