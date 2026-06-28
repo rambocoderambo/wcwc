@@ -645,7 +645,7 @@ html += `<div class="mr"><div class="mt" style="text-align:right">${home}</div>`
 html += `<input class="mi" value="${sc[0]}" placeholder="-" maxlength="2" oninput="onGroupScore('${k}',0,this.value)">`;
 html += `<span class="mv">vs</span>`;
 html += `<input class="mi" value="${sc[1]}" placeholder="-" maxlength="2" oninput="onGroupScore('${k}',1,this.value)">`;
-html += `<div class="mt">${away}</div><div class="dt">📆 ${MATCH_TIMES[gi][m]}</div>`;
+html += `<div class="mt">${away}</div><div class="dt" style="font-size:8px!important">📆 ${MATCH_TIMES[gi][m]}</div>`;
 html += `<div class="cd" data-ts="${getMatchTs(gi,m)}" data-key="${k}">⏳ --</div>`;
 html += `<div class="ah" data-home="${home}" data-away="${away}">--</div></div>`;
     }
@@ -713,7 +713,7 @@ function renderBracket() {
 const koTime = KO_TIMES[rd.key] && KO_TIMES[rd.key][i-1] ? KO_TIMES[rd.key][i-1] : '';
 const koTS = getKOTs(rd.key, i);
 html += `<div class="bm${rd.fin?' fn':''}>
-  ${koTime ? `<div class="dt">📆 ${koTime}</div>` : ''}
+  ${koTime ? `<div class="dt" style="font-size:8px!important">📆 ${koTime}</div>` : ''}
   <div class="cd" data-ts="${koTS}" data-key="${key}">⏳ --</div>
   <div class="bt${hW?' w':(aW?' l':'')}"><span class="nm">${teams.h}</span>
           <input class="bi" value="${sc[0]}" placeholder="-" maxlength="2" oninput="onKOScore('${key}',0,this.value)"></div>
