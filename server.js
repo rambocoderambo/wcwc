@@ -321,14 +321,34 @@ async function getOdds() {
       headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://beta.asianbookie.com/en/world-cup', 'Accept': 'application/json' }
     });
     const body = await res.json();
-    const matchCards = body.data?.matchCards || [];
-    for (const mc of matchCards) {
+    const bd = body.data || {};
+
+    // 2a. Match cards (upcoming matches with full AH data)
+    for (const mc of bd.matchCards || []) {
       const home = normalizeName(mc.HOME_TEAM_NAME || '');
       const away = normalizeName(mc.AWAY_TEAM_NAME || '');
       if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
       const ah = mc.AH;
       if (!ah || !ah.odds) continue;
       const hVal = parseFloat(ah.odds);
+      const displayVal = handicapToFraction(Math.abs(hVal));
+      let ahLine;
+      if (hVal < 0) ahLine = '0 : ' + displayVal;
+      else if (hVal > 0) ahLine = displayVal + ' : 0';
+      else ahLine = '0 : 0';
+      const key = home + '|' + away;
+      if (!data.has(key)) data.set(key, { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
+    }
+
+    // 2b. Hot picks (AH market picks with handicap lines)
+    for (const hp of bd.hotPicks || []) {
+      if (hp.marketType !== 'AH') continue;
+      const home = normalizeName(hp.homeTeam?.name || '');
+      const away = normalizeName(hp.awayTeam?.name || '');
+      if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
+      if (!hp.pickLabelPrefix) continue;
+      const hVal = parseFloat(hp.pickLabelPrefix);
+      if (isNaN(hVal)) continue;
       const displayVal = handicapToFraction(Math.abs(hVal));
       let ahLine;
       if (hVal < 0) ahLine = '0 : ' + displayVal;
