@@ -250,38 +250,16 @@ function handicapToFraction(h) {
 }
 
 async function scrapeClassicAsianBookie() {
-  let html;
-
-  // Try cloudscraper first (works locally, bypasses Cloudflare)
-  try {
-    const cloudscraper = require('cloudscraper');
-    await cloudscraper.get({
-      uri: 'https://beta.asianbookie.com/en/world-cup',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      simple: false
-    });
-    const csHtml = await cloudscraper.get({
-      uri: 'https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Cookie': 'CLASSIC=1'
-      }
-    });
-    // Validate: if cloudscraper returned Cloudflare challenge, use direct fetch instead
-    if (csHtml && csHtml.includes(' vs ')) html = csHtml;
-  } catch (e) { /* fall through to direct fetch */ }
-
-  // Direct fetch (works on Vercel, no Cloudflare bypass needed)
-  if (!html) {
-    const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Cookie': 'CLASSIC=1',
-        'Accept': 'text/html'
-      }
-    });
-    html = await res.text();
-  }
+  // Direct fetch to ColdFusion page with CLASSIC=1 cookie
+  // Works on both local and Vercel (no Cloudflare bypass needed with this cookie + headers)
+  const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Cookie': 'CLASSIC=1',
+      'Accept': 'text/html'
+    }
+  });
+  const html = await res.text();
 
   const $ = cheerio.load(html);
   $('script, style, link, meta, noscript, iframe').remove();
