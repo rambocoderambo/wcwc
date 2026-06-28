@@ -269,25 +269,23 @@ async function scrapeClassicAsianBookie() {
   const $ = cheerio.load(html);
   $('script, style, link, meta, noscript, iframe').remove();
   const text = $('body').text();
-  const lines = text.split('\n').map(l => l.trim());
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
 
   const results = new Map();
 
-  // New format: R32 knockout matches with AH odds
-  // Pattern: date line, then team1, vs, team2, odds, AH line, ...
+  // Find match data with AH odds - look for date lines
   for (let i = 0; i < lines.length - 6; i++) {
-    // Find date lines (e.g., "29/Jun  03:00")
-    if (!/^\d{1,2}\/[A-Z][a-z]{2}\s{2}\d{2}:\d{2}$/.test(lines[i])) continue;
+    // Match date patterns like "29/Jun  03:00" or "30/Jun  01:00"
+    if (!/^\d{1,2}\/[A-Z][a-z]{2}\s+\d{2}:\d{2}$/.test(lines[i])) continue;
     const team1 = lines[i + 1] || '';
     const vs = lines[i + 2] || '';
     const team2 = lines[i + 3] || '';
-    if (vs !== 'vs' || !team1 || !team2 || /^[\d.]+$/.test(team1)) continue;
+    if (vs !== 'vs') continue;
+    if (!team1 || !team2 || /^[\d.]+$/.test(team1) || /^[\d.]+$/.test(team2)) continue;
 
-    // Check if the line after odds is an AH line (contains ":")
     const odds = lines[i + 4] || '';
     const ahLine = lines[i + 5] || '';
     if (!ahLine.includes(':') || !/[\d\/]/.test(ahLine)) continue;
-    if (/^[\d.]+$/.test(odds)) continue; // skip 1X2 section (odds are numbers only)
 
     const home = normalizeName(team1);
     const away = normalizeName(team2);
