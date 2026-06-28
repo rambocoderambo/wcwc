@@ -133,13 +133,13 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 <div class="nw" id="nextRow"></div>
 </div>
 
-<div id="groupsContainer" class="grd"></div>
-
 <div class="ko">
 <h2>🏆 Knockout Stage</h2>
 <div class="bc"><div class="br" id="bracket"></div></div>
 <div class="ch" id="champion"><div>🏆</div><h3>WORLD CUP CHAMPION</h3><div class="cn" id="champName">—</div></div>
 </div>
+
+<div id="groupsContainer" class="grd"></div>
 </div>
 
 <script>
@@ -529,11 +529,13 @@ function getTeams(round, id) {
 // KO match times (MYT) from worldcuplocaltime.com
 // Indexed by match number (1-based)
 const KO_TIMES = {
-  // Re-ordered to match R32 ID order (not FIFA match number order)
-  R32: ['Jun 29 · 3:00 AM MYT','Jun 30 · 9:00 AM MYT','Jun 30 · 1:00 AM MYT','Jun 30 · 4:30 AM MYT',
-        'Jul 1 · 5:00 AM MYT','Jul 1 · 1:00 AM MYT','Jul 1 · 9:00 AM MYT','Jul 2 · 12:00 AM MYT',
-        'Jul 2 · 8:00 AM MYT','Jul 2 · 4:00 AM MYT','Jul 3 · 7:00 AM MYT','Jul 3 · 3:00 AM MYT',
-        'Jul 3 · 11:00 AM MYT','Jul 4 · 9:30 AM MYT','Jul 4 · 2:00 AM MYT','Jul 4 · 6:00 AM MYT'],
+  // From football-data.org UTC times converted to MYT (UTC+8)
+  R32: ['Jun 30 · 1:00 AM MYT','Jun 30 · 4:30 AM MYT','Jun 30 · 9:00 AM MYT',
+        'Jul 1 · 1:00 AM MYT','Jul 1 · 5:00 AM MYT','Jul 1 · 9:00 AM MYT',
+        'Jul 2 · 12:00 AM MYT','Jul 2 · 4:00 AM MYT','Jul 2 · 8:00 AM MYT',
+        'Jul 3 · 3:00 AM MYT','Jul 3 · 7:00 AM MYT','Jul 3 · 11:00 AM MYT',
+        'Jul 4 · 2:00 AM MYT','Jul 4 · 6:00 AM MYT','Jul 4 · 9:30 AM MYT',
+        'Jul 5 · 1:00 AM MYT'],
   R16: ['Jul 5 · 5:00 AM MYT','Jul 5 · 1:00 AM MYT','Jul 6 · 4:00 AM MYT','Jul 6 · 8:00 AM MYT',
         'Jul 7 · 3:00 AM MYT','Jul 7 · 8:00 AM MYT','Jul 8 · 12:00 AM MYT','Jul 8 · 4:00 AM MYT'],
   QF:  ['Jul 10 · 4:00 AM MYT','Jul 11 · 3:00 AM MYT','Jul 12 · 5:00 AM MYT','Jul 12 · 9:00 AM MYT'],
