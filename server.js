@@ -252,7 +252,7 @@ function handicapToFraction(h) {
 async function scrapeClassicAsianBookie() {
   let html;
 
-  // Try cloudscraper first (works locally)
+  // Try cloudscraper first (works locally, bypasses Cloudflare)
   try {
     const cloudscraper = require('cloudscraper');
     await cloudscraper.get({
@@ -260,15 +260,19 @@ async function scrapeClassicAsianBookie() {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
       simple: false
     });
-    html = await cloudscraper.get({
+    const csHtml = await cloudscraper.get({
       uri: 'https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Cookie': 'CLASSIC=1'
       }
     });
-  } catch (e) {
-    // Fallback: direct fetch (might work on Vercel)
+    // Validate: if cloudscraper returned Cloudflare challenge, use direct fetch instead
+    if (csHtml && csHtml.includes(' vs ')) html = csHtml;
+  } catch (e) { /* fall through to direct fetch */ }
+
+  // Direct fetch (works on Vercel, no Cloudflare bypass needed)
+  if (!html) {
     const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
