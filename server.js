@@ -301,6 +301,9 @@ async function scrapeClassicAsianBookie() {
   return Array.from(results.values());
 }
 
+// Save odds to static file for Vercel fallback
+const ODDS_CACHE_FILE = require('path').join(__dirname, 'api', 'odds-cache.json');
+
 async function getOdds() {
   const cached = AH_CACHE.data && (Date.now() - AH_CACHE.ts < AH_CACHE.ttl);
   if (cached) return AH_CACHE.data;
@@ -312,6 +315,12 @@ async function getOdds() {
   try {
     const classic = await scrapeClassicAsianBookie();
     for (const o of classic) data.set(o.home + '|' + o.away, o);
+    // Save to cache file for Vercel fallback
+    try {
+      const fs = require('fs');
+      fs.mkdirSync(require('path').join(__dirname, 'api'), { recursive: true });
+      fs.writeFileSync(ODDS_CACHE_FILE, JSON.stringify(Array.from(data.values()), null, 2));
+    } catch(e) {}
   } catch (e) {}
 
   // 2. Beta API fallback (reliable on Vercel)
@@ -358,6 +367,14 @@ async function getOdds() {
       if (!data.has(key)) data.set(key, { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
     }
   } catch (e) {}
+
+  // 3. Static cache file fallback (for Vercel when live scrape fails)
+  if (data.size === 0) {
+    try {
+      const cached = JSON.parse(require('fs').readFileSync(ODDS_CACHE_FILE, 'utf8'));
+      for (const o of cached) data.set(o.home + '|' + o.away, o);
+    } catch(e) {}
+  }
 
   AH_CACHE.data = Array.from(data.values());
   AH_CACHE.ts = Date.now();
