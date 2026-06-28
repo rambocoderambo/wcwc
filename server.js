@@ -303,10 +303,43 @@ async function getOdds() {
   const cached = AH_CACHE.data && (Date.now() - AH_CACHE.ts < AH_CACHE.ttl);
   if (cached) return AH_CACHE.data;
 
-  const data = await scrapeClassicAsianBookie();
-  AH_CACHE.data = data;
+  // Try both sources and merge
+  const data = new Map();
+
+  // 1. Classic ColdFusion scrape (more matches)
+  try {
+    const classic = await scrapeClassicAsianBookie();
+    for (const o of classic) data.set(o.home + '|' + o.away, o);
+  } catch (e) {}
+
+  // 2. Beta API fallback (reliable on Vercel)
+  try {
+    const url = 'https://beta.asianbookie.com/api/poll/world-cup/summary?locale=en';
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://beta.asianbookie.com/en/world-cup', 'Accept': 'application/json' }
+    });
+    const body = await res.json();
+    const matchCards = body.data?.matchCards || [];
+    for (const mc of matchCards) {
+      const home = normalizeName(mc.HOME_TEAM_NAME || '');
+      const away = normalizeName(mc.AWAY_TEAM_NAME || '');
+      if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
+      const ah = mc.AH;
+      if (!ah || !ah.odds) continue;
+      const hVal = parseFloat(ah.odds);
+      const displayVal = handicapToFraction(Math.abs(hVal));
+      let ahLine;
+      if (hVal < 0) ahLine = '0 : ' + displayVal;
+      else if (hVal > 0) ahLine = displayVal + ' : 0';
+      else ahLine = '0 : 0';
+      const key = home + '|' + away;
+      if (!data.has(key)) data.set(key, { home, away, ah_line: ahLine, bookmaker: 'AsianBookie', source: 'AsianBookie' });
+    }
+  } catch (e) {}
+
+  AH_CACHE.data = Array.from(data.values());
   AH_CACHE.ts = Date.now();
-  return data;
+  return AH_CACHE.data;
 }
 
 // ---------- WORLD CUP SCHEDULE ----------
