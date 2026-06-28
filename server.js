@@ -250,21 +250,34 @@ function handicapToFraction(h) {
 }
 
 async function scrapeClassicAsianBookie() {
-  const cloudscraper = require('cloudscraper');
+  let html;
 
-  await cloudscraper.get({
-    uri: 'https://beta.asianbookie.com/en/world-cup',
-    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-    simple: false
-  });
-
-  const html = await cloudscraper.get({
-    uri: 'https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Cookie': 'CLASSIC=1'
-    }
-  });
+  // Try cloudscraper first (works locally)
+  try {
+    const cloudscraper = require('cloudscraper');
+    await cloudscraper.get({
+      uri: 'https://beta.asianbookie.com/en/world-cup',
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      simple: false
+    });
+    html = await cloudscraper.get({
+      uri: 'https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Cookie': 'CLASSIC=1'
+      }
+    });
+  } catch (e) {
+    // Fallback: direct fetch (might work on Vercel)
+    const res = await fetch('https://asianbookie.com/index.cfm/World-Cup/?league=4&tz=8', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Cookie': 'CLASSIC=1',
+        'Accept': 'text/html'
+      }
+    });
+    html = await res.text();
+  }
 
   const $ = cheerio.load(html);
   $('script, style, link, meta, noscript, iframe').remove();
