@@ -408,42 +408,46 @@ for (const g of GROUPS) {
   }
 }
 
-// ---------- SOURCE ROUTER ----------
-const APIFOOTBALL_KEYS = [
-  process.env.APIFOOTBALL_KEY || '672aa02fe1cd2b77ec0d5fd6eb5526da3b797e4039b5396405fd27bb6308b012',
-  '9a5b43f6a5b8f9f26a460689317f7ac4'
-];
+// ---------- HARDCODED GROUP RESULTS ----------
+// 72 group matches with final scores (verified against football-data.org)
+const GROUP_RESULTS = {
+'Mexico|South Africa':{h:2,a:0},'South Korea|Czech Republic':{h:2,a:1},'Canada|Bosnia and Herzegovina':{h:1,a:1},
+'United States|Paraguay':{h:4,a:1},'Qatar|Switzerland':{h:1,a:1},'Brazil|Morocco':{h:1,a:1},
+'Haiti|Scotland':{h:0,a:1},'Australia|Turkey':{h:2,a:0},'Germany|Curaçao':{h:7,a:1},
+'Netherlands|Japan':{h:2,a:2},'Ivory Coast|Ecuador':{h:1,a:0},'Sweden|Tunisia':{h:5,a:1},
+'Spain|Cape Verde':{h:0,a:0},'Belgium|Egypt':{h:1,a:1},'Saudi Arabia|Uruguay':{h:1,a:1},
+'Iran|New Zealand':{h:2,a:2},'France|Senegal':{h:3,a:1},'Iraq|Norway':{h:1,a:4},
+'Argentina|Algeria':{h:3,a:0},'Austria|Jordan':{h:3,a:1},'Portugal|DR Congo':{h:1,a:1},
+'England|Croatia':{h:4,a:2},'Ghana|Panama':{h:1,a:0},'Uzbekistan|Colombia':{h:1,a:3},
+'Czech Republic|South Africa':{h:1,a:1},'Switzerland|Bosnia and Herzegovina':{h:4,a:1},
+'Canada|Qatar':{h:6,a:0},'Mexico|South Korea':{h:1,a:0},
+'United States|Australia':{h:2,a:0},'Scotland|Morocco':{h:0,a:1},'Brazil|Haiti':{h:3,a:0},
+'Turkey|Paraguay':{h:0,a:1},'Netherlands|Sweden':{h:5,a:1},'Germany|Ivory Coast':{h:2,a:1},
+'Ecuador|Curaçao':{h:0,a:0},'Tunisia|Japan':{h:0,a:4},'Spain|Saudi Arabia':{h:4,a:0},
+'Belgium|Iran':{h:0,a:0},'Uruguay|Cape Verde':{h:2,a:2},'New Zealand|Egypt':{h:1,a:3},
+'Argentina|Austria':{h:2,a:0},'France|Iraq':{h:3,a:0},'Norway|Senegal':{h:3,a:2},
+'Jordan|Algeria':{h:1,a:2},'Portugal|Uzbekistan':{h:5,a:0},'England|Ghana':{h:0,a:0},
+'Panama|Croatia':{h:0,a:1},'Colombia|DR Congo':{h:1,a:0},
+'Switzerland|Canada':{h:2,a:1},'Bosnia and Herzegovina|Qatar':{h:3,a:1},
+'Morocco|Haiti':{h:4,a:2},'Scotland|Brazil':{h:0,a:3},'Czech Republic|Mexico':{h:0,a:3},
+'South Africa|South Korea':{h:1,a:0},
+'Ecuador|Germany':{h:2,a:1},'Curaçao|Ivory Coast':{h:0,a:2},
+'Tunisia|Netherlands':{h:1,a:3},'Japan|Sweden':{h:1,a:1},
+'Turkey|United States':{h:3,a:2},'Paraguay|Australia':{h:0,a:0},
+'Norway|France':{h:1,a:4},'Senegal|Iraq':{h:5,a:0},
+'Uruguay|Spain':{h:0,a:1},'Cape Verde|Saudi Arabia':{h:0,a:0},
+'New Zealand|Belgium':{h:1,a:5},'Egypt|Iran':{h:1,a:1},
+'Panama|England':{h:0,a:2},'Croatia|Ghana':{h:2,a:1},
+'Colombia|Portugal':{h:0,a:0},'DR Congo|Uzbekistan':{h:3,a:1},
+'Jordan|Argentina':{h:1,a:3},'Algeria|Austria':{h:3,a:3}
+};
 
-async function fetchAPIFootballScores() {
-  for (const key of APIFOOTBALL_KEYS) {
-    try {
-      const url = `https://apiv3.apifootball.com/?action=get_events&from=2026-06-11&to=2026-07-20&league_id=28&APIkey=${key}`;
-      const res = await fetch(url, { headers: { 'User-Agent': 'WC2026-Scoreboard/1.0' } });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (!Array.isArray(data)) continue;
-
-      return data.map(m => {
-        const home = normalizeName(m.match_hometeam_name || '');
-        const away = normalizeName(m.match_awayteam_name || '');
-        if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
-        if (!isWorldCupMatch(home, away)) return null;
-        const status = m.match_status || '';
-        return {
-          home, away,
-          homeScore: sanitizeScore(m.match_hometeam_score),
-          awayScore: sanitizeScore(m.match_awayteam_score),
-          status: status === 'Finished' ? 'FT' : (status === 'Ongoing' ? 'LIVE' : 'UPCOMING'),
-          date: m.match_date || null,
-          source: 'apifootball'
-        };
-      }).filter(Boolean);
-    } catch (e) { /* try next key */ }
-  }
-  return [];
+async function fetchHardcodedGroups() {
+  return Object.entries(GROUP_RESULTS).map(([key, s]) => {
+    const [home, away] = key.split('|');
+    return { home, away, homeScore: s.h, awayScore: s.a, status: 'FT', date: null, source: 'hardcoded' };
+  });
 }
-
-const FOOTBALL_DATA_KEY = process.env.FOOTBALL_DATA_KEY || '9ce776b7a6ce49c58d8e7280bf4b7aab';
 
 async function fetchFootballData() {
   const url = 'https://api.football-data.org/v4/competitions/2000/matches?dateFrom=2026-06-11&dateTo=2026-07-19';
@@ -456,7 +460,7 @@ async function fetchFootballData() {
     const home = normalizeName(m.homeTeam?.name || '');
     const away = normalizeName(m.awayTeam?.name || '');
     if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) return null;
-    if (!isWorldCupMatch(home, away)) return null;
+    // Allow all matches (group + knockout) — isWorldCupMatch only covers group stage
 
     const statusMap = { 'FINISHED': 'FT', 'IN_PLAY': 'LIVE', 'PAUSED': 'LIVE', 'SCHEDULED': 'UPCOMING', 'TIMED': 'UPCOMING', 'POSTPONED': 'UPCOMING' };
     const ft = m.score?.fullTime || {};
@@ -499,11 +503,9 @@ async function fetchHardcodedR32() {
 }
 
 const SOURCES = [
+  { name: 'hardcoded-groups', fn: fetchHardcodedGroups },
   { name: 'football-data', fn: fetchFootballData },
   { name: 'hardcoded-r32', fn: fetchHardcodedR32 },
-  { name: 'apifootball', fn: fetchAPIFootballScores },
-  { name: '365scores', fn: fetch365scores },
-  { name: 'bbc', fn: fetchBBC },
 ];
 
 async function getMatches() {
