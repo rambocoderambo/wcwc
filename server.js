@@ -450,6 +450,7 @@ async function fetchHardcodedGroups() {
 }
 
 async function fetchFootballData() {
+  const FOOTBALL_DATA_KEY = process.env.FOOTBALL_DATA_KEY || '9ce776b7a6ce49c58d8e7280bf4b7aab';
   const url = 'https://api.football-data.org/v4/competitions/2000/matches?dateFrom=2026-06-11&dateTo=2026-07-19';
   const res = await fetch(url, { headers: { 'X-Auth-Token': FOOTBALL_DATA_KEY } });
   if (!res.ok) throw new Error(`football-data.org ${res.status}`);
