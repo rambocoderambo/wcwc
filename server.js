@@ -478,31 +478,6 @@ async function fetchFootballData() {
   }).filter(Boolean);
 }
 
-// Hardcoded R32 results (known scores, API can't provide future matches)
-const R32_HARDCODED = {
-  'Canada|South Africa': { home: 1, away: 0 },
-};
-
-async function fetchHardcodedR32() {
-  const results = [];
-  const now = Date.now();
-  for (const [key, score] of Object.entries(R32_HARDCODED)) {
-    const [home, away] = key.split('|');
-    if (!CANONICAL_TEAMS.has(home) || !CANONICAL_TEAMS.has(away)) continue;
-    // Check if this match time has passed (rough check using match end time)
-    results.push({
-      home, away,
-      homeScore: score.home,
-      awayScore: score.away,
-      status: 'FT',
-      date: null,
-      source: 'hardcoded-r32'
-    });
-  }
-  return results;
-}
-
-
 async function getMatches() {
   const cached = getCached('matches');
   if (cached) return cached;
@@ -530,14 +505,6 @@ async function getMatches() {
       } else if (!mergedMap.has(key)) {
         mergedMap.set(key, m);
       }
-    }
-  } catch (e) {}
-
-  // 3. Try hardcoded R32 fallback for any remaining matches
-  try {
-    for (const m of await fetchHardcodedR32()) {
-      const key = m.home + '|' + m.away;
-      if (!mergedMap.has(key)) mergedMap.set(key, m);
     }
   } catch (e) {}
 
