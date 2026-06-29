@@ -494,19 +494,27 @@ function getTeams(round, id) {
   else if(round === 'QF')  src = QF_SRC[id-1];
   else if(round === 'SF')  src = SF_SRC[id-1];
   else if(round === 'FIN' || round === '3RD') {
-    // FIN and 3RD get their teams from SF
     src = [1,2];
     if(round === '3RD') src = [1,2]; // losers of SF
   }
   if(!src) return {h:'TBD',a:'TBD'};
   
-  // Previous round
   const prev = {R16:'R32', QF:'R16', SF:'QF', FIN:'SF', '3RD':'SF'};
   const pr = prev[round];
   if(!pr) return {h:'TBD',a:'TBD'};
   
   const w1 = getWinner(pr, src[0]);
   const w2 = getWinner(pr, src[1]);
+  
+  // If both winners known, return them
+  if (w1 && w2) return {h:w1, a:w2};
+  
+  // Show potential teams when winner is TBD
+  const t1 = getTeams(pr, src[0]);
+  const t2 = getTeams(pr, src[1]);
+  
+  let home = w1 || (t1.h && t1.a ? t1.h + '/' + t1.a : 'TBD');
+  let away = w2 || (t2.h && t2.a ? t2.h + '/' + t2.a : 'TBD');
   
   // For 3RD place match, we need the LOSERS of the SFs
   if(round === '3RD') {
