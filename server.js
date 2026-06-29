@@ -502,29 +502,48 @@ async function fetchHardcodedR32() {
   return results;
 }
 
-const SOURCES = [
-  { name: 'hardcoded-groups', fn: fetchHardcodedGroups },
-  { name: 'football-data', fn: fetchFootballData },
-  { name: 'hardcoded-r32', fn: fetchHardcodedR32 },
-];
 
 async function getMatches() {
   const cached = getCached('matches');
   if (cached) return cached;
 
-  for (const source of SOURCES) {
-    try {
-      const matches = await source.fn();
-      if (matches && matches.length > 0) {
-        setCache('matches', { matches, source: source.name });
-        return { matches, source: source.name };
-      }
-    } catch (e) {
-      console.log(`Source ${source.name} failed: ${e.message}`);
-    }
-  }
+  // Merge ALL sources: hardcoded groups as base, then overlay R32+ results
+  const mergedMap = new Map();
+  let liveSource = 'hardcoded';
 
-  return { matches: [], source: 'none' };
+  // 1. Always include hardcoded group results
+  try {
+    for (const m of await fetchHardcodedGroups()) {
+      mergedMap.set(m.home + '|' + m.away, m);
+    }
+  } catch (e) {}
+
+  // 2. Try football-data for R32+ live scores
+  try {
+    const matches = await fetchFootballData();
+    for (const m of matches) {
+      const key = m.home + '|' + m.away;
+      // Override hardcoded with live data if score exists
+      if (m.homeScore !== null) {
+        mergedMap.set(key, { ...m, source: 'football-data' });
+        liveSource = 'football-data';
+      } else if (!mergedMap.has(key)) {
+        mergedMap.set(key, m);
+      }
+    }
+  } catch (e) {}
+
+  // 3. Try hardcoded R32 fallback for any remaining matches
+  try {
+    for (const m of await fetchHardcodedR32()) {
+      const key = m.home + '|' + m.away;
+      if (!mergedMap.has(key)) mergedMap.set(key, m);
+    }
+  } catch (e) {}
+
+  const allMatches = Array.from(mergedMap.values());
+  setCache('matches', { matches: allMatches, source: liveSource });
+  return { matches: allMatches, source: liveSource };
 }
 
 // ---------- ROUTES ----------
