@@ -230,6 +230,7 @@ async function fetchOdds() {
         oddsMap[o.home + '|' + o.away] = { line: label, src: src };
         oddsMap[o.away + '|' + o.home] = { line: label, src: src };
       }
+      console.log('Odds loaded:', data.odds.length, 'matches. Keys:', Object.keys(oddsMap).slice(0,5).join(', '));
       applyOdds();
       renderNextMatches();
       setTimeout(applyOdds, 50);
@@ -256,6 +257,9 @@ function applyOdds() {
       el.innerHTML = '<span class="lv">AH ' + entry.line + '</span>';
     } else {
       el.innerHTML = '<span class="ld">--</span>';
+      if (home && away && home !== 'TBD' && away !== 'TBD') {
+        console.log('No odds for:', home, 'vs', away);
+      }
     }
   });
 }
