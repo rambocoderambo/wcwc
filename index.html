@@ -231,6 +231,8 @@ async function fetchOdds() {
         oddsMap[o.away + '|' + o.home] = { line: label, src: src };
       }
       applyOdds();
+      renderNextMatches();
+      setTimeout(applyOdds, 50);
     }
     btn.innerHTML = '🔄 Odds';
     btn.title = `Loaded ${data.count || 0} matches`;
