@@ -368,13 +368,14 @@ async function getOdds() {
     }
   } catch (e) {}
 
-  // 3. Static cache file fallback (for Vercel when live scrape fails)
-  if (data.size === 0) {
-    try {
-      const cached = JSON.parse(require('fs').readFileSync(ODDS_CACHE_FILE, 'utf8'));
-      for (const o of cached) data.set(o.home + '|' + o.away, o);
-    } catch(e) {}
-  }
+  // 3. Static cache file fallback — merge with live data (cache has more matches)
+  try {
+    const cached = JSON.parse(require('fs').readFileSync(ODDS_CACHE_FILE, 'utf8'));
+    for (const o of cached) {
+      const key = o.home + '|' + o.away;
+      if (!data.has(key)) data.set(key, o);
+    }
+  } catch(e) {}
 
   AH_CACHE.data = Array.from(data.values());
   AH_CACHE.ts = Date.now();
