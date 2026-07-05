@@ -1,85 +1,50 @@
 [
   {
-    "home": "England",
-    "away": "DR Congo",
-    "ah_line": "0 : 1 1/2",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Belgium",
-    "away": "Senegal",
-    "ah_line": "0 : 1/4",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "United States",
-    "away": "Bosnia and Herzegovina",
-    "ah_line": "0 : 1 1/4",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Spain",
-    "away": "Austria",
-    "ah_line": "0 : 1 1/2",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Portugal",
-    "away": "Croatia",
+    "home": "Brazil",
+    "away": "Norway",
     "ah_line": "0 : 3/4",
     "bookmaker": "AsianBookie",
     "source": "AsianBookie"
   },
   {
-    "home": "Switzerland",
-    "away": "Algeria",
-    "ah_line": "0 : 1/2",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Australia",
-    "away": "Egypt",
+    "home": "Mexico",
+    "away": "England",
     "ah_line": "1/4 : 0",
     "bookmaker": "AsianBookie",
     "source": "AsianBookie"
   },
   {
-    "home": "Argentina",
-    "away": "Cape Verde",
-    "ah_line": "0 : 2",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Colombia",
-    "away": "Ghana",
-    "ah_line": "0 : 1",
-    "bookmaker": "AsianBookie",
-    "source": "AsianBookie"
-  },
-  {
-    "home": "Canada",
-    "away": "Morocco",
+    "home": "Portugal",
+    "away": "Spain",
     "ah_line": "1/2 : 0",
     "bookmaker": "AsianBookie",
     "source": "AsianBookie"
   },
   {
-    "home": "Paraguay",
-    "away": "France",
-    "ah_line": "2 : 0",
+    "home": "United States",
+    "away": "Belgium",
+    "ah_line": "0 : 0",
     "bookmaker": "AsianBookie",
     "source": "AsianBookie"
   },
   {
-    "home": "Brazil",
-    "away": "Norway",
-    "ah_line": "0 : 1/2",
+    "home": "Argentina",
+    "away": "Egypt",
+    "ah_line": "0 : 1 1/4",
+    "bookmaker": "AsianBookie",
+    "source": "AsianBookie"
+  },
+  {
+    "home": "Switzerland",
+    "away": "Colombia",
+    "ah_line": "1/4 : 0",
+    "bookmaker": "AsianBookie",
+    "source": "AsianBookie"
+  },
+  {
+    "home": "France",
+    "away": "Morocco",
+    "ah_line": "0 : 1",
     "bookmaker": "AsianBookie",
     "source": "AsianBookie"
   }
