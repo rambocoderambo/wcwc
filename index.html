@@ -513,12 +513,8 @@ function getTeams(round, id) {
   // If both winners known, return them
   if (w1 && w2) return {h:w1, a:w2};
   
-  // Get potential teams from previous round matches
-  const t1 = getTeams(pr, src[0]);
-  const t2 = getTeams(pr, src[1]);
-  
-  let home = w1 || (t1.h !== 'TBD' && t1.a !== 'TBD' ? t1.h + '/' + t1.a : 'TBD');
-  let away = w2 || (t2.h !== 'TBD' && t2.a !== 'TBD' ? t2.h + '/' + t2.a : 'TBD');
+  let home = w1 || 'W ' + pr + '-' + src[0];
+  let away = w2 || 'W ' + pr + '-' + src[1];
   
   // For 3RD place match, we need the LOSERS of the SFs
   if(round === '3RD') {
