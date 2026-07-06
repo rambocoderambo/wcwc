@@ -510,6 +510,16 @@ function getTeams(round, id) {
   const w1 = getWinner(pr, src[0]);
   const w2 = getWinner(pr, src[1]);
   
+  // If both winners known, return them
+  if (w1 && w2) return {h:w1, a:w2};
+  
+  // Get potential teams from previous round matches
+  const t1 = getTeams(pr, src[0]);
+  const t2 = getTeams(pr, src[1]);
+  
+  let home = w1 || (t1.h !== 'TBD' && t1.a !== 'TBD' ? t1.h + '/' + t1.a : 'TBD');
+  let away = w2 || (t2.h !== 'TBD' && t2.a !== 'TBD' ? t2.h + '/' + t2.a : 'TBD');
+  
   // For 3RD place match, we need the LOSERS of the SFs
   if(round === '3RD') {
     const t1 = getTeams(pr, src[0]);
@@ -529,7 +539,7 @@ function getTeams(round, id) {
     return {h:l1, a:l2};
   }
   
-  return {h:w1||'TBD', a:w2||'TBD'};
+  return {h:home, a:away};
 }
 
 // KO match times (MYT) from worldcuplocaltime.com
