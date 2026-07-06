@@ -324,6 +324,18 @@ const R32_MATCHES = [
   {id:16, home:'1 K', away:'3-DEIJL'},      // M87  Kansas City
 ];
 
+// Round of 16 matchups (from football-data.org API)
+const R16_MATCHUPS = [
+  ['Canada','Morocco'],         // R16 slot 1
+  ['Paraguay','France'],        // R16 slot 2
+  ['Brazil','Norway'],          // R16 slot 3
+  ['Mexico','England'],         // R16 slot 4
+  ['Portugal','Spain'],         // R16 slot 5
+  ['United States','Belgium'],  // R16 slot 6
+  ['Argentina','Egypt'],        // R16 slot 7
+  ['Switzerland','Colombia'],   // R16 slot 8
+];
+
 // Bracket connections: which R32 matches feed into each R16 match
 const R16_SRC = [[1,4],[3,6],[2,5],[7,8],[10,9],[12,11],[13,16],[15,14]];
 // QF from R16 match numbers
@@ -492,6 +504,11 @@ function getWinner(round, id) {
 
 function getTeams(round, id) {
   if(round === 'R32') return getR32Team(id);
+  if(round === 'R16') {
+    const m = R16_MATCHUPS[id-1];
+    if (m) return {h:m[0], a:m[1]};
+    return {h:'TBD',a:'TBD'};
+  }
   
   let src;
   if(round === 'R16') src = R16_SRC[id-1];
