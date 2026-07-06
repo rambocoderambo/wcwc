@@ -520,7 +520,7 @@ function getTeams(round, id) {
   }
   if(!src) return {h:'TBD',a:'TBD'};
   
-  const prev = {R16:'R32', QF:'R16', SF:'QF', FIN:'SF', '3RD':'SF'};
+  const prev = {QF:'R16', SF:'QF', FIN:'SF', '3RD':'SF'};
   const pr = prev[round];
   if(!pr) return {h:'TBD',a:'TBD'};
   
@@ -530,8 +530,15 @@ function getTeams(round, id) {
   // If both winners known, return them
   if (w1 && w2) return {h:w1, a:w2};
   
-  let home = w1 || 'W ' + pr + '-' + src[0];
-  let away = w2 || 'W ' + pr + '-' + src[1];
+  // Show expected teams from previous round
+  function getPair(r, s) {
+    if(r === 'R16' && R16_MATCHUPS[s-1]) return R16_MATCHUPS[s-1].join('/');
+    const t = getTeams(r, s);
+    return t.h !== 'TBD' && t.a !== 'TBD' ? t.h + '/' + t.a : 'TBD';
+  }
+  
+  let home = w1 || getPair(pr, src[0]);
+  let away = w2 || getPair(pr, src[1]);
   
   // For 3RD place match, we need the LOSERS of the SFs
   if(round === '3RD') {
