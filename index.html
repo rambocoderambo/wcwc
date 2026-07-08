@@ -143,7 +143,7 @@ td:first-child{text-align:left;padding-left:10px;font-weight:600}
 <div class="ch" id="champion"><div>🏆</div><h3>WORLD CUP CHAMPION</h3><div class="cn" id="champName">—</div></div>
 </div>
 
-<div style="text-align:center;margin:16px 0"><img src="r16.jpg" alt="Knockout Bracket" style="max-width:100%;border-radius:8px;border:1px solid #1e293b"></div>
+<div style="text-align:center;margin:16px 0"><img src="qf.jpg" alt="Knockout Bracket" style="max-width:100%;border-radius:8px;border:1px solid #1e293b"></div>
 
 <div id="groupsContainer" class="grd"></div>
 </div>
@@ -324,16 +324,24 @@ const R32_MATCHES = [
   {id:16, home:'1 K', away:'3-DEIJL'},      // M87  Kansas City
 ];
 
-// Round of 16 matchups (from football-data.org API)
+// Round of 16 matchups (actual tournament results)
 const R16_MATCHUPS = [
-  ['Canada','Morocco'],         // R16 slot 1
-  ['Paraguay','France'],        // R16 slot 2
-  ['Brazil','Norway'],          // R16 slot 3
-  ['Mexico','England'],         // R16 slot 4
-  ['Portugal','Spain'],         // R16 slot 5
-  ['United States','Belgium'],  // R16 slot 6
-  ['Argentina','Egypt'],        // R16 slot 7
-  ['Switzerland','Colombia'],   // R16 slot 8
+  ['Canada','Morocco'],         // R16 slot 1 → Morocco won
+  ['Paraguay','France'],        // R16 slot 2 → France won
+  ['Brazil','Norway'],          // R16 slot 3 → Norway won
+  ['Mexico','England'],         // R16 slot 4 → England won
+  ['Portugal','Spain'],         // R16 slot 5 → Spain won
+  ['United States','Belgium'],  // R16 slot 6 → Belgium won
+  ['Argentina','Egypt'],        // R16 slot 7 → Argentina won
+  ['Switzerland','Colombia'],   // R16 slot 8 → Switzerland won
+];
+
+// Quarter-finals matchups (from AsianBookie odds)
+const QF_MATCHUPS = [
+  ['France','Morocco'],
+  ['Norway','England'],
+  ['Spain','Belgium'],
+  ['Argentina','Switzerland'],
 ];
 
 // Bracket connections: which R32 matches feed into each R16 match
@@ -506,6 +514,11 @@ function getTeams(round, id) {
   if(round === 'R32') return getR32Team(id);
   if(round === 'R16') {
     const m = R16_MATCHUPS[id-1];
+    if (m) return {h:m[0], a:m[1]};
+    return {h:'TBD',a:'TBD'};
+  }
+  if(round === 'QF') {
+    const m = QF_MATCHUPS[id-1];
     if (m) return {h:m[0], a:m[1]};
     return {h:'TBD',a:'TBD'};
   }
