@@ -344,6 +344,11 @@ const QF_MATCHUPS = [
   ['Argentina','Switzerland'],
 ];
 
+// Semi-finals matchups (France vs Spain confirmed by AsianBookie odds)
+const SF_MATCHUPS = [
+  ['France','Spain'],
+];
+
 // Bracket connections: which R32 matches feed into each R16 match
 const R16_SRC = [[1,4],[3,6],[2,5],[7,8],[10,9],[12,11],[13,16],[15,14]];
 // QF from R16 match numbers (linear order)
@@ -519,6 +524,11 @@ function getTeams(round, id) {
   }
   if(round === 'QF') {
     const m = QF_MATCHUPS[id-1];
+    if (m) return {h:m[0], a:m[1]};
+    return {h:'TBD',a:'TBD'};
+  }
+  if(round === 'SF') {
+    const m = SF_MATCHUPS[id-1];
     if (m) return {h:m[0], a:m[1]};
     return {h:'TBD',a:'TBD'};
   }
