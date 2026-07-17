@@ -551,8 +551,8 @@ function getTeams(round, id) {
   const w1 = getWinner(pr, src[0]);
   const w2 = getWinner(pr, src[1]);
   
-  // If both winners known, return them
-  if (w1 && w2) return {h:w1, a:w2};
+  // If both winners known, return them (except 3RD needs losers)
+  if (w1 && w2 && round !== '3RD') return {h:w1, a:w2};
   
   // Show expected teams from previous round
   function getPair(r, s) {
