@@ -1123,6 +1123,10 @@ function applyMatches(apiMatches) {
 // ---------- INIT ----------
 try { const d = localStorage.getItem('wc26'); if(d) { scores = JSON.parse(d); } } catch(e) {}
 
+// Ensure SF scores exist (may be missing from old localStorage saves)
+if(!scores['SF_1']) scores['SF_1']=['0','1'];
+if(!scores['SF_2']) scores['SF_2']=['0','1'];
+
 // Auto-fill group scores from hardcoded data if empty
 function autoFillGroupScores() {
   const hardcoded = {
