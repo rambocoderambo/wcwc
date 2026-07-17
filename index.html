@@ -576,7 +576,7 @@ function getTeams(round, id) {
     if(isNaN(h2)||isNaN(a2)||h2===a2) { const e2=scores[pr+'_'+src[1]+'_et']||['','']; h2=parseInt(e2[0]); a2=parseInt(e2[1]); }
     if(isNaN(h2)||isNaN(a2)||h2===a2) { const p2=scores[pr+'_'+src[1]+'_pen']||['','']; h2=parseInt(p2[0]); a2=parseInt(p2[1]); }
 
-    let l1 = 'L '+pr+'-'+src[0], l2 = 'L '+pr+'-'+src[1];
+    let l1 = getPair(pr, src[0]), l2 = getPair(pr, src[1]);
     if(!isNaN(h1)&&!isNaN(a1)&&h1!==a1) l1 = h1>a1 ? t1.a : t1.h;
     if(!isNaN(h2)&&!isNaN(a2)&&h2!==a2) l2 = h2>a2 ? t2.a : t2.h;
     return {h:l1, a:l2};
